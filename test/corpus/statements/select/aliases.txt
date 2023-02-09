@@ -1,0 +1,24 @@
+==================
+aliases
+==================
+
+select
+  ln.name
+    as "Name"
+from
+  app_public.ldata_node ln
+
+---
+
+(source_file
+  (select_statement
+    outputs: (select_output
+      expression: (identifier)
+      output_name: (identifier)
+    )
+    from: (from_item
+      table_name: (identifier)
+      alias: (identifier)
+    )
+  )
+)
