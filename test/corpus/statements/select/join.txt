@@ -1,0 +1,37 @@
+==================
+select: join
+==================
+
+select
+  ln.id
+from
+  app_public.ldata_tree_edge lte
+inner join
+  app_public.ldata_node ln
+  on ln.id = lte.child_id
+
+---
+
+(source_file
+  (select
+    outputs: (select_output
+      expression: (identifier (name) (name))
+    )
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name) (name))
+        alias: (identifier_single)
+        (select_join
+          join_target: (select_from_item_unjoined
+            table_name: (identifier (name) (name))
+            alias: (identifier_single)
+          )
+          join_condition: (expr_comparison
+            lhs: (identifier (name) (name))
+            rhs: (identifier (name) (name))
+          )
+        )
+      )
+    )
+  )
+)

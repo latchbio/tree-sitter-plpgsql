@@ -1,0 +1,21 @@
+==================
+select: distinct
+==================
+
+select distinct col from data
+
+---
+
+(source_file
+  (select
+    distinct: (select_distinct)
+    outputs: (select_output
+      expression: (identifier (name))
+    )
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name))
+      )
+    )
+  )
+)

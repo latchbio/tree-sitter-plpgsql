@@ -1,0 +1,26 @@
+==================
+meta commands
+==================
+
+\ir test.sql
+\ir schema/tables.sql
+
+\c hi bye
+
+---
+
+(source_file
+  (meta_command
+    command: (meta_part)
+    arguments: (meta_part)
+  )
+  (meta_command
+    command: (meta_part)
+    arguments: (meta_part)
+  )
+  (meta_command
+    command: (meta_part)
+    arguments: (meta_part)
+    arguments: (meta_part)
+  )
+)

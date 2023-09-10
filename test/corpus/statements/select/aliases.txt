@@ -1,5 +1,5 @@
 ==================
-aliases
+select: aliases
 ==================
 
 select
@@ -11,14 +11,16 @@ from
 ---
 
 (source_file
-  (select_statement
+  (select
     outputs: (select_output
-      expression: (identifier)
-      output_name: (identifier)
+      expression: (identifier (name) (name))
+      alias: (identifier_single)
     )
-    from: (from_item
-      table_name: (identifier)
-      alias: (identifier)
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name) (name))
+        alias: (identifier_single)
+      )
     )
   )
 )

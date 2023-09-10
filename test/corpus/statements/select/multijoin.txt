@@ -1,0 +1,50 @@
+==================
+select: multi join
+==================
+
+select
+  lom.content_type
+from
+  app_public.ldata_tree_edge lte
+inner join
+  app_public.ldata_node ln
+  on ln.id = lte.child_id
+inner join
+  app_public.ldata_object_meta lom
+  on lom.ldata_node_id = ln.id
+
+---
+
+(source_file
+  (select
+    outputs: (select_output
+      expression: (identifier (name) (name))
+    )
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name) (name))
+        alias: (identifier_single)
+        (select_join
+          join_target: (select_from_item_unjoined
+            table_name: (identifier (name) (name))
+            alias: (identifier_single)
+          )
+          join_condition: (expr_comparison
+            lhs: (identifier (name) (name))
+            rhs: (identifier (name) (name))
+          )
+        )
+        (select_join
+          join_target: (select_from_item_unjoined
+            table_name: (identifier (name) (name))
+            alias: (identifier_single)
+          )
+          join_condition: (expr_comparison
+            lhs: (identifier (name) (name))
+            rhs: (identifier (name) (name))
+          )
+        )
+      )
+    )
+  )
+)

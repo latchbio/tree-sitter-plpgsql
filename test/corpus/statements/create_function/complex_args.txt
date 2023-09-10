@@ -1,0 +1,38 @@
+==================
+create function: complex args
+==================
+
+create or replace function app_private.get_account_viewers(
+  arg_account_id app_public.account_info.id%type,
+  arg_perm_level app_public.perm_level = 'owner' -- the level of permission being asked for
+) returns setof app_public.account_info.id%type
+strict
+security definer
+as $fn$
+$fn$;
+
+---
+
+(source_file
+  (create_function
+    name: (identifier (name) (name))
+    args: (function_argument_definition
+      name: (name)
+      type: (type_name_or_ref
+        (identifier (name) (name) (name))
+      )
+    )
+    args: (function_argument_definition
+      name: (name)
+      type: (type_name_or_ref
+        (type_name (identifier (name) (name)))
+      )
+      default: (string)
+    )
+    (comment)
+    return_type: (type_name_or_ref
+      (identifier (name) (name) (name))
+    )
+    as: (string)
+  )
+)

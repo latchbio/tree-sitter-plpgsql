@@ -1,3 +1,6 @@
+@default:
+  just --list --unsorted
+
 @build:
   yarn run tree-sitter generate
 

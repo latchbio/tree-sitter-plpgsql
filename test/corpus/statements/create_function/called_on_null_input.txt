@@ -1,0 +1,21 @@
+==================
+create function: called on null input
+==================
+
+create function test()
+returns bigint
+called on null input
+security definer
+as $$
+$$ language plpgsql stable
+
+---
+
+(source_file
+  (create_function
+    name: (identifier (name))
+    return_type: (type_name_or_ref (type_name))
+    as: (string)
+    language: (name)
+  )
+)

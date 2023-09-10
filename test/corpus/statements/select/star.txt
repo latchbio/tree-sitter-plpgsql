@@ -1,0 +1,18 @@
+==================
+select: *
+==================
+
+select * from data
+
+---
+
+(source_file
+  (select
+    outputs: (select_output)
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name))
+      )
+    )
+  )
+)

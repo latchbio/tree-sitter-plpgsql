@@ -1,15 +1,15 @@
 ==================
-select 1
+select: literal
 ==================
 
-select 1;
+select 1
 
 ---
 
 (source_file
-  (select_statement
+  (select
     outputs: (select_output
-      expression: (integer)
+      expression: (number)
     )
   )
 )

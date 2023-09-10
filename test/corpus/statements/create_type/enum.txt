@@ -1,0 +1,24 @@
+==================
+create type: simple
+==================
+
+create type app_public.perm_level as enum (
+  'none',
+  'viewer',
+  'member',
+  'admin',
+  'owner'
+)
+
+---
+
+(source_file
+  (create_type
+    name: (identifier (name) (name))
+    enum: (string)
+    enum: (string)
+    enum: (string)
+    enum: (string)
+    enum: (string)
+  )
+)

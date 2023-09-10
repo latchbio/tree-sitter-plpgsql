@@ -1,0 +1,14 @@
+==================
+create index: simple
+==================
+
+create index on app_public.account_info(ldata_root)
+
+---
+
+(source_file
+  (create_index
+    target_table: (identifier (name) (name))
+    target_columns: (index_expression (identifier_single))
+  )
+)

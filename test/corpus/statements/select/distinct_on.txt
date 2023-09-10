@@ -1,0 +1,31 @@
+==================
+select: distinct on
+==================
+
+select distinct on (owner_id)
+  owner_id,
+  display_name
+from
+  app_public.team_info ti
+
+---
+
+(source_file
+  (select
+    distinct: (select_distinct
+      on: (identifier (name))
+    )
+    outputs: (select_output
+      expression: (identifier (name))
+    )
+    outputs: (select_output
+      expression: (identifier (name))
+    )
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name) (name))
+        alias: (identifier_single)
+      )
+    )
+  )
+)

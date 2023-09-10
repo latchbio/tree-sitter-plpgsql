@@ -1,0 +1,29 @@
+==================
+select: where
+==================
+
+select
+  col
+from
+  data
+where
+  col > 0
+
+---
+
+(source_file
+  (select
+    outputs: (select_output
+      expression: (identifier (name))
+    )
+    from: (select_from
+      data: (select_from_item
+        table_name: (identifier (name))
+      )
+    )
+    where: (expr_comparison
+      lhs: (identifier (name))
+      rhs: (number)
+    )
+  )
+)

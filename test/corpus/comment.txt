@@ -1,0 +1,16 @@
+==================
+comment
+==================
+
+-- hello world
+
+/*
+  mutiline hello world
+*/
+
+---
+
+(source_file
+  (comment)
+  (comment)
+)

@@ -1,5 +1,5 @@
 /node_modules
-/bindings
-/Cargo.toml
-/binding.gyp
 /src
+/build
+/bindings
+/scratch*
