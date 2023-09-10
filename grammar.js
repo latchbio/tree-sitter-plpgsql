@@ -57,7 +57,6 @@ module.exports = grammar({
         $.create_type,
         $.create_policy,
         $.create_sequence,
-        $.create_type,
         $.create_schema,
         $.create_role,
         $.create_extension,

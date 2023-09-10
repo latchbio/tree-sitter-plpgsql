@@ -5,5 +5,15 @@
   "dependencies": {
     "nan": "^2.17.0"
   },
-  "main": "bindings/node"
+  "main": "bindings/node",
+  "tree-sitter": [
+    {
+      "scope": "source.sql",
+      "file-types": [
+        "sql",
+        "ddl",
+        "dml"
+      ]
+    }
+  ]
 }

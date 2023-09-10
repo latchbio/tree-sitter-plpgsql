@@ -5,14 +5,14 @@ from tree_sitter import Language, Node, Parser
 print("compiling")
 start = time.monotonic()
 Language.build_library(
-  'build/python.so',
-  [
-    '.',
-  ]
+    "build/python.so",
+    [
+        ".",
+    ],
 )
 print(f"done {time.monotonic() - start:.3f}s")
 
-plpgsql = Language('build/python.so', 'plpgsql')
+plpgsql = Language("build/python.so", "plpgsql")
 
 parser = Parser()
 parser.set_language(plpgsql)
@@ -28,6 +28,7 @@ parse_time = 0
 total_count = 0
 total_size = 0
 errored: list[Path] = []
+
 
 def render(cur: Node, indent=""):
     indent += "  "
@@ -45,9 +46,12 @@ def render(cur: Node, indent=""):
             print(prefix)
             render(x, indent + "  ")
 
+
 root = Path("../vacuole/schema")
 
 ignore = {".DS_Store"}
+
+
 def try_parse(cur: Path, indent=""):
     for x in cur.iterdir():
         if x.name in ignore:
@@ -79,6 +83,7 @@ def try_parse(cur: Path, indent=""):
 
             # print(f"{indent}{ast.type}:")
             # render(ast, indent)
+
 
 try_parse(root)
 
