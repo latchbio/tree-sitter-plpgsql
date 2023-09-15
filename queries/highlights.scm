@@ -7,6 +7,17 @@
   "alter" @keyword
   "table" @keyword
 )
+(create_function
+  "create" @keyword
+  (
+    "or" @keyword
+    "replace" @keyword
+  )?
+  "function" @keyword
+  name: _ @entity.name
+  "returns" @keyword
+  "setof"? @keyword
+)
 (create_index
   "create" @keyword
   "unique"? @keyword
