@@ -40,7 +40,10 @@ module.exports = grammar({
     source_file: ($) => optional($._line),
     _line: ($) =>
       choice(
-        s($._statement, opt(repeat1(";"), opt($._line))),
+        s(
+          $._statement,
+          opt(choice(repeat1(";"), $.meta_command), opt($._line))
+        ),
         s($.meta_command, opt("\n", opt($._line)))
       ),
 
@@ -535,7 +538,8 @@ module.exports = grammar({
         f("check", opt("with", "check", parens($._expr)))
       ),
 
-    create_sequence: ($) => s("create", "sequence", $.identifier),
+    create_sequence: ($) =>
+      s("create", "sequence", opt("if", "not", "exists"), $.identifier),
 
     create_schema: ($) =>
       s("create", "schema", opt("if", "not", "exists"), $.identifier_single),
