@@ -22,7 +22,7 @@ create table app_public.account_info (
     name: (identifier (name) (name))
     statements: (column_definition
       name: (identifier_single)
-      type: (type_name)
+      type: (type_name (identifier (name)))
       constraints: (column_constraint)
     )
     statements: (table_constraint
@@ -35,7 +35,7 @@ create table app_public.account_info (
     )
     statements: (column_definition
       name: (identifier_single)
-      type: (type_name)
+      type: (type_name (identifier (name)))
       constraints: (column_constraint)
       constraints: (column_constraint
         (column_constraint_references
@@ -47,7 +47,7 @@ create table app_public.account_info (
     )
     statements: (column_definition
       name: (identifier_single)
-      type: (type_name)
+      type: (type_name (identifier (name)))
       constraints: (column_constraint)
       constraints: (column_constraint
         (boolean)

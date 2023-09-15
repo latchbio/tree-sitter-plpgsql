@@ -14,7 +14,7 @@ $$ language plpgsql stable
 (source_file
   (create_function
     name: (identifier (name))
-    return_type: (type_name_or_ref (type_name))
+    return_type: (type_name_or_ref (type_name (identifier (name))))
     as: (string
       (dollar_string_start)
       (dollar_string_content)

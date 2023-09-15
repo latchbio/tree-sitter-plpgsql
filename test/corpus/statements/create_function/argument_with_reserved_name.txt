@@ -3,7 +3,8 @@ create function: arg with reserved name
 ==================
 
 create or replace function test(
-  path text
+  path text,
+  path
 )
 returns null on null input
 stable
@@ -22,7 +23,12 @@ $fn$
     args: (function_argument_definition
       name: (name)
       type: (type_name_or_ref
-        (type_name)
+        (type_name (identifier (name)))
+      )
+    )
+    args: (function_argument_definition
+      type: (type_name_or_ref
+        (type_name (identifier (name)))
       )
     )
     language: (name)

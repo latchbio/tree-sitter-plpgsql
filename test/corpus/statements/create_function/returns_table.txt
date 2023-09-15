@@ -18,11 +18,11 @@ $fn$;
     return_type: (returns_table_definition
       column: (returns_table_column_definition
         name: (identifier_single)
-        type: (type_name_or_ref (type_name))
+        type: (type_name_or_ref (type_name (identifier (name))))
       )
       column: (returns_table_column_definition
         name: (identifier_single)
-        type: (type_name_or_ref (type_name))
+        type: (type_name_or_ref (type_name (identifier (name))))
       )
     )
     as: (string

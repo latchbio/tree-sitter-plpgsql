@@ -29,15 +29,21 @@ $$ language plpgsql stable;
     )
     args: (function_argument_definition
       name: (name)
-      type: (type_name_or_ref (type_name))
+      type: (type_name_or_ref
+        (type_name (identifier (name)))
+      )
       default: (string)
     )
     args: (function_argument_definition
       name: (name)
-      type: (type_name_or_ref (type_name))
+      type: (type_name_or_ref
+        (type_name (identifier (name)))
+      )
       default: (null)
     )
-    return_type: (type_name_or_ref (type_name))
+    return_type: (type_name_or_ref
+      (type_name (identifier (name)))
+    )
     as: (string
       (dollar_string_start)
       (dollar_string_content)
