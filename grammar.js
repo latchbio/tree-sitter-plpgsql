@@ -28,6 +28,12 @@ const tz_specifier = opt(choice("with", "without"), "time", "zone");
 module.exports = grammar({
   name: "plpgsql",
 
+  word: ($) => $.name,
+  externals: ($) => [
+    $.dollar_string_start,
+    $.dollar_string_content,
+    $.dollar_string_end,
+  ],
   extras: ($) => [/\s/, $.comment],
   supertypes: ($) => [$._expr, $._statement],
   rules: {
@@ -88,7 +94,7 @@ module.exports = grammar({
     string: ($) =>
       choice(
         s(/[E:]?'[^']*'/),
-        s(/\$[a-zA-Z]*\$/, /([^$]|\$[^$a-zA-Z])+/, /\$[a-zA-Z]*\$/) // todo: external scanner for $-strings
+        s($.dollar_string_start, $.dollar_string_content, $.dollar_string_end)
       ),
     typed_string: ($) => s($.type_name, $.string),
 

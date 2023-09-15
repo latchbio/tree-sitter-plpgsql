@@ -1,5 +1,7 @@
-(string) @string
 (comment) @comment
+
+(string) @string
+(number) @constant.numeric
 
 (alter_table
   "alter" @keyword

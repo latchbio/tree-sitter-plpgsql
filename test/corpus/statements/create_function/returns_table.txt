@@ -25,6 +25,10 @@ $fn$;
         type: (type_name_or_ref (type_name))
       )
     )
-    as: (string)
+    as: (string
+      (dollar_string_start)
+      (dollar_string_content)
+      (dollar_string_end)
+    )
   )
 )

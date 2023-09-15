@@ -6,3 +6,6 @@
 
 @test: build
   yarn run tree-sitter test
+
+@test-scanner:
+  yarn run tree-sitter test

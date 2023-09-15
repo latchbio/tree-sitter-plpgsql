@@ -1,0 +1,34 @@
+==================
+create function: arg with reserved name
+==================
+
+create or replace function test(
+  path text
+)
+returns null on null input
+stable
+parallel safe
+language plpgsql
+as $fn$
+$fn$
+
+---
+
+(source_file
+  (create_function
+    name: (identifier
+      (name)
+    )
+    args: (function_argument_definition
+      name: (name)
+      type: (type_name_or_ref
+        (type_name)
+      )
+    )
+    language: (name)
+    as: (string
+      (dollar_string_start)
+      (dollar_string_content)
+      (dollar_string_end))
+    )
+)

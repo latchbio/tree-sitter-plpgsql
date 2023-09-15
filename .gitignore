@@ -1,6 +1,8 @@
 /node_modules
-/src
 /build
 /bindings
 /scratch*
 /vscode_themes
+
+/src/*
+!/src/scanner.cc
