@@ -3,6 +3,7 @@
 /bindings
 /scratch*
 /vscode_themes
+/test_highlighted
 
 /src/*
 !/src/scanner.cc
