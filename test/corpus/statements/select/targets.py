@@ -12,16 +12,16 @@ source_file
         simple_select
             (keywords) select
             (targets) select_target
-                (value) expression
-                (keywords): "as"
+                (value) constant_integer
+                (keywords) as
                 (alias) column_label
                     (identifier) identifier
             (targets) select_target
-                (value) expression
+                (value) constant_integer
                 (alias) bare_column_label
                     (identifier) identifier
             (targets) select_target
-                (value) expression
+                (value) constant_integer
             (targets) select_target
                 (value): "*"
 """
@@ -32,20 +32,20 @@ source_file
     0 simple_select
       0 (keywords) select: b'select'
       1 (targets) select_target
-        0 (value) expression: b'1'
+        0 (value) constant_integer: b'1'
         1 (keywords) as: b'as'
         2 (alias) column_label
           0 (identifier) identifier: b'as'
       2 (punctuation) ',': b','
       3 (punctuation) comment: b'-- note: reserved keyword'
       4 (targets) select_target
-        0 (value) expression: b'2'
+        0 (value) constant_integer: b'2'
         1 (alias) bare_column_label
           0 (identifier) identifier: b'action'
       5 (punctuation) ',': b','
       6 (punctuation) comment: b'-- note: unreserved keyword'
       7 (targets) select_target
-        0 (value) expression: b'3'
+        0 (value) constant_integer: b'3'
       8 (punctuation) ',': b','
       9 (targets) select_target
         0 (value) '*': b'*'
