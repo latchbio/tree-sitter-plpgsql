@@ -1,6 +1,6 @@
 from pathlib import Path
 import time
-from tree_sitter import Language, Node, Parser
+from tree_sitter import Language, Parser
 
 print("compiling")
 start = time.monotonic()
@@ -28,24 +28,6 @@ parse_time = 0
 total_count = 0
 total_size = 0
 errored: list[Path] = []
-
-
-def render(cur: Node, indent=""):
-    indent += "  "
-    for i, x in enumerate(cur.children):
-        name = cur.field_name_for_child(i)
-        if name is not None:
-            name = f" ({name})"
-        else:
-            name = ""
-
-        prefix = f"{indent}{i}{name} {x.type}"
-        if len(x.children) == 0:
-            print(f"{prefix}: {x.text}")
-        else:
-            print(prefix)
-            render(x, indent + "  ")
-
 
 root = Path("../vacuole/schema")
 
@@ -80,9 +62,6 @@ def try_parse(cur: Path, indent=""):
                 errored.append(x)
 
             print(f"{indent}{x.name}: {marker}")
-
-            # print(f"{indent}{ast.type}:")
-            # render(ast, indent)
 
 
 try_parse(root)

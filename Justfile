@@ -5,7 +5,7 @@
   yarn run tree-sitter generate
 
 @test: build
-  yarn run tree-sitter test
+  python -m test.corpus
 
 @test-scanner:
   yarn run tree-sitter test
