@@ -43,7 +43,13 @@ module.exports = grammar({
   ],
   extras: ($) => [/[ \t\n\r\f\v]/, $.comment],
   supertypes: ($) => [$.indirection_element],
-  inline: ($) => [$.select_target_list, $.indirection, $.attr_name, $.name],
+  inline: ($) => [
+    $.select_target_list,
+    $.indirection,
+    $.attr_name,
+    $.name,
+    $.func_name,
+  ],
   rules: {
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/scan.l
@@ -52,8 +58,32 @@ module.exports = grammar({
     source_file: ($) => opt(sep($.statement_select, ";")),
 
     comment: ($) => /--[^\n\r]*|\/\*([^*]|\*[^/])*\*+\//,
+
+    // >>> Identifiers
     identifier: ($) => /[A-Za-z\x80-\xff_][A-Za-z\x80-\xff0-9_$]*/,
 
+    column_identifier: ($) =>
+      // note: allows only certain keywords
+      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L16971
+      f("identifier", $.identifier),
+    type_function_name: ($) =>
+      // note: allows only certain keywords
+      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L16971
+      f("identifier", $.identifier),
+    column_label: ($) =>
+      // note: allows all keywords
+      f("identifier", $.identifier),
+    bare_column_label: ($) =>
+      // note: allows only certain keywords
+      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L17544
+      f("identifier", $.identifier),
+
+    name: ($) => alias($.column_identifier, "name"),
+    attr_name: ($) => alias($.column_label, "attr_name"),
+    func_name: ($) =>
+      choice($.type_function_name, alias($.qualified_name1, $.qualified_name)),
+
+    // >>>
     indirection_attribute_access: ($) =>
       s(punct("."), f("attribute", choice($.attr_name, "*"))),
     indirection_array_access: ($) =>
@@ -75,26 +105,13 @@ module.exports = grammar({
     indirection: ($) => repeat1(f("indirections", $.indirection_element)),
     qualified_name: ($) =>
       s(f("identifier", $.column_identifier), opt($.indirection)),
+    qualified_name1: ($) =>
+      s(f("identifier", $.column_identifier), $.indirection),
 
-    column_identifier: ($) =>
-      // note: allows only certain keywords
-      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L16971
-      f("identifier", $.identifier),
-    column_label: ($) =>
-      // note: allows all keywords
-      f("identifier", $.identifier),
-    bare_column_label: ($) =>
-      // note: allows only certain keywords
-      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L17544
-      f("identifier", $.identifier),
-
-    name: ($) => alias($.column_identifier, "name"),
-    attr_name: ($) => alias($.column_label, "attr_name"),
-
-    // a_expr
+    // >>> a_expr
     expression: ($) => /\d+/,
 
-    // SelectStmt
+    // >>> SelectStmt
     statement_select: ($) => $.simple_select,
 
     select_all_clause: ($) => kw("all"),
@@ -126,29 +143,37 @@ module.exports = grammar({
         )
       ),
 
-    select_relation_expression: ($) =>
+    select_from_relation_expression: ($) =>
       choice(
         s(f("name", $.qualified_name), opt(punct("*"))),
         s(kw("only"), f("name", $.qualified_name)),
         s(kw("only"), parens(f("name", $.qualified_name)))
       ),
-    select_table_reference_alias_clause: ($) =>
+    select_from_table_reference_alias_clause: ($) =>
       s(
         opt(kw("as")),
         f("name", $.column_identifier),
         opt(parcomma(f("columns", $.name)))
       ),
-    select_table_reference: ($) =>
+    select_from_tablesample_clause: ($) =>
+      s(
+        kw("tablesample"),
+        f("function", $.func_name),
+        parcomma(f("arguments", $.expression)),
+        opt(kw("repeatable"), parens(f("seed", $.expression)))
+      ),
+    select_from_table_reference: ($) =>
       s(
         choice(
           s(
-            f("relation", $.select_relation_expression),
-            opt(f("alias", $.select_table_reference_alias_clause))
+            f("relation", $.select_from_relation_expression),
+            opt(f("alias", $.select_from_table_reference_alias_clause)),
+            opt(f("tablesample", $.select_from_tablesample_clause))
           )
         )
       ),
     select_from_clause: ($) =>
-      s(kw("from"), comma(f("tables", $.select_table_reference))),
+      s(kw("from"), comma(f("tables", $.select_from_table_reference))),
 
     simple_select: ($) =>
       s(
