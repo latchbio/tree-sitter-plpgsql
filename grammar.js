@@ -35,7 +35,7 @@ const kw = (name) =>
 module.exports = grammar({
   name: "plpgsql",
 
-  // word: ($) => $.name,
+  // word: ($) => $.identifier,
   externals: ($) => [
     $.dollar_string_start,
     $.dollar_string_content,
@@ -57,13 +57,13 @@ module.exports = grammar({
     indirection_attribute_access: ($) =>
       s(punct("."), f("attribute", choice($.attr_name, "*"))),
     indirection_array_access: ($) =>
-      s(punct("["), f("index", $.expr), punct("]")),
+      s(punct("["), f("index", $.expression), punct("]")),
     indirection_slice: ($) =>
       s(
         punct("["),
-        opt(f("lower_bound", $.expr)),
+        opt(f("lower_bound", $.expression)),
         punct(":"),
-        opt(f("upper_bound", $.expr)),
+        opt(f("upper_bound", $.expression)),
         punct("]")
       ),
     indirection_element: ($) =>
@@ -92,7 +92,7 @@ module.exports = grammar({
     attr_name: ($) => alias($.column_label, "attr_name"),
 
     // a_expr
-    expr: ($) => /\d+/,
+    expression: ($) => /\d+/,
 
     // SelectStmt
     statement_select: ($) => $.simple_select,
@@ -100,9 +100,9 @@ module.exports = grammar({
     select_all_clause: ($) => kw("all"),
     select_target: ($) =>
       choice(
-        s(f("value", $.expr), kw("as"), f("alias", $.column_label)),
-        s(f("value", $.expr), f("alias", $.bare_column_label)),
-        f("value", $.expr),
+        s(f("value", $.expression), kw("as"), f("alias", $.column_label)),
+        s(f("value", $.expression), f("alias", $.bare_column_label)),
+        f("value", $.expression),
         f("value", "*")
       ),
     select_target_list: ($) => comma(f("targets", $.select_target)),
@@ -126,12 +126,37 @@ module.exports = grammar({
         )
       ),
 
+    select_relation_expression: ($) =>
+      choice(
+        s(f("name", $.qualified_name), opt(punct("*"))),
+        s(kw("only"), f("name", $.qualified_name)),
+        s(kw("only"), parens(f("name", $.qualified_name)))
+      ),
+    select_table_reference_alias_clause: ($) =>
+      s(
+        opt(kw("as")),
+        f("name", $.column_identifier),
+        opt(parcomma(f("columns", $.name)))
+      ),
+    select_table_reference: ($) =>
+      s(
+        choice(
+          s(
+            f("relation", $.select_relation_expression),
+            opt(f("alias", $.select_table_reference_alias_clause))
+          )
+        )
+      ),
+    select_from_clause: ($) =>
+      s(kw("from"), comma(f("tables", $.select_table_reference))),
+
     simple_select: ($) =>
       s(
         kw("select"),
         opt(f("all_clause", $.select_all_clause)),
         opt($.select_target_list),
-        opt(f("into_clause", $.select_into_clause))
+        opt(f("into_clause", $.select_into_clause)),
+        opt(f("from_clause", $.select_from_clause))
       ),
   },
 });

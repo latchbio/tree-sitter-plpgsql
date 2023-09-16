@@ -52,13 +52,13 @@ source_file
                     (indirections) indirection_attribute_access
                     (indirections) indirection_array_access
                         (punctuation) "["
-                        (index) expr: "123"
+                        (index) expression: "123"
                         (punctuation) "]"
                     (indirections) indirection_slice
                         (punctuation) "["
-                        (lower_bound) expr: "12"
+                        (lower_bound) expression: "12"
                         (punctuation) ":"
-                        (upper_bound) expr: "34"
+                        (upper_bound) expression: "34"
                         (punctuation) "]"
                     (indirections) indirection_attribute_access
                         (attribute) "*"
@@ -196,13 +196,13 @@ source_file
               0 (identifier) identifier: b'somecolumn'
           3 (indirections) indirection_array_access
             0 (punctuation) '[': b'['
-            1 (index) expr: b'123'
+            1 (index) expression: b'123'
             2 (punctuation) ']': b']'
           4 (indirections) indirection_slice
             0 (punctuation) '[': b'['
-            1 (lower_bound) expr: b'12'
+            1 (lower_bound) expression: b'12'
             2 (punctuation) ':': b':'
-            3 (upper_bound) expr: b'34'
+            3 (upper_bound) expression: b'34'
             4 (punctuation) ']': b']'
           5 (indirections) indirection_attribute_access
             0 (punctuation) '.': b'.'
