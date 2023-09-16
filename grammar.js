@@ -2,11 +2,11 @@ const s = (...rules) => (rules.length > 0 ? seq(...rules) : rules[0]);
 const opt = (...rules) => optional(s(...rules));
 const f = (name, ...rules) => field(name, s(...rules));
 const anon = (rule) => alias(rule, "");
-const sep = (rule, sep) => s(rule, repeat(s(sep, rule)));
+const sep = (rule, sep) => s(rule, repeat(s(punct(sep), rule)));
 
 const punct = (x) => f("punctuation", x);
 
-const comma = (...rule) => sep(s(...rule), punct(","));
+const comma = (...rule) => sep(s(...rule), ",");
 const parens = (...rule) => s(punct("("), ...rule, punct(")"));
 const parcomma = (...rule) => parens(comma(...rule));
 const quotable = (rule, quote) =>
@@ -42,14 +42,14 @@ module.exports = grammar({
     $.dollar_string_end,
   ],
   extras: ($) => [/[ \t\n\r\f\v]/, $.comment],
-  supertypes: ($) => [],
-  inline: ($) => [$.select_target_list],
+  supertypes: ($) => [$.indirection_element],
+  inline: ($) => [$.select_target_list, $.indirection, $.attr_name, $.name],
   rules: {
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/scan.l
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/include/parser/kwlist.h
 
-    source_file: ($) => opt($.statement_select),
+    source_file: ($) => opt(sep($.statement_select, ";")),
 
     comment: ($) => /--[^\n\r]*|\/\*([^*]|\*[^/])*\*+\//,
     identifier: ($) => /[A-Za-z\x80-\xff_][A-Za-z\x80-\xff0-9_$]*/,
@@ -72,12 +72,9 @@ module.exports = grammar({
         $.indirection_array_access,
         $.indirection_slice
       ),
-    indirection: ($) => repeat1(f("elements", $.indirection_element)),
+    indirection: ($) => repeat1(f("indirections", $.indirection_element)),
     qualified_name: ($) =>
-      s(
-        f("identifier", $.column_identifier),
-        opt(f("indirection", $.indirection))
-      ),
+      s(f("identifier", $.column_identifier), opt($.indirection)),
 
     column_identifier: ($) =>
       // note: allows only certain keywords
@@ -91,8 +88,8 @@ module.exports = grammar({
       // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L17544
       f("identifier", $.identifier),
 
-    name: ($) => anon($.column_identifier),
-    attr_name: ($) => anon($.column_label),
+    name: ($) => alias($.column_identifier, "name"),
+    attr_name: ($) => alias($.column_label, "attr_name"),
 
     // a_expr
     expr: ($) => /\d+/,
@@ -111,13 +108,13 @@ module.exports = grammar({
     select_target_list: ($) => comma(f("targets", $.select_target)),
     select_into_clause: ($) =>
       s(
-        f("keyword_into", kw("into")),
+        kw("into"),
         choice(
           s(
             opt(
               choice(
                 s(
-                  opt(choice(kw("global", kw("local")))),
+                  opt(choice(kw("global"), kw("local"))),
                   choice(kw("temporary"), kw("temp"))
                 ),
                 kw("unlogged")

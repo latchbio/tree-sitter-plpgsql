@@ -38,7 +38,13 @@ class NodeData:
     text: bytes | None = None
     children: list["NodeData"] = dataclasses.field(default_factory=list)
 
-    def compare(self, that: "NodeData", *, ignore_nulls=False):
+    def has_error(self):
+        if self.type == "ERROR":
+            return True
+
+        return any(x.has_error() for x in self.children)
+
+    def compare(self, that: "NodeData", *, ignore_nulls=False, allow_missing=False):
         for name in node_data_checked_fields:
             a = getattr(self, name)
             b = getattr(that, name)
@@ -57,11 +63,32 @@ class NodeData:
 
             return False
 
+        if allow_missing:
+            idx = 0
+            for b in that.children:
+                if idx >= len(self.children):
+                    return False
+
+                a = self.children[idx]
+
+                while not a.compare(
+                    b, ignore_nulls=ignore_nulls, allow_missing=allow_missing
+                ):
+                    idx += 1
+
+                    if idx >= len(self.children):
+                        return False
+                    a = self.children[idx]
+
+                idx += 1
+
+            return True
+
         if len(self.children) != len(that.children):
             return False
 
         return all(
-            a.compare(b, ignore_nulls=ignore_nulls)
+            a.compare(b, ignore_nulls=ignore_nulls, allow_missing=allow_missing)
             for a, b in zip(self.children, that.children)
         )
 
@@ -98,6 +125,7 @@ rendered_re = re.compile(
     r"""
     ^
     (?P<indent>[ ]*)
+    (?P<comment>\#[ ]*)?
     (
         (?P<idx>\d+)
         [ ]+
@@ -109,7 +137,7 @@ rendered_re = re.compile(
         [ ]*
     )?
     (?P<type>\w+)?
-    (?P<raw_type>['"][^'"]+['"])?
+    (?P<raw_type>['"][^'"]*['"])?
     (
         :
         [ ]+
@@ -134,6 +162,10 @@ def read_rendered(data: str):
         match = rendered_re.match(l)
         if match is None:
             raise RuntimeError(f"invalid line: {repr(l)}")
+
+        comment: str | None = match.group("comment")
+        if comment is not None:
+            continue
 
         indent_str: str = match.group("indent")
         idx: str | None = match.group("idx")
@@ -223,11 +255,17 @@ def walk(cur: Path, out: Path, *, indent=""):
         outline_data = read_rendered(outline)
         expected_data = read_rendered(expected)
 
+        outline_with_error = outline_data.has_error()
+
         out.parent.mkdir(parents=True, exist_ok=True)
         out.with_suffix(".txt").write_text(str(ast_data))
 
-        outline_ok = ast_data.compare(outline_data, ignore_nulls=True)
+        outline_ok = ast_data.compare(
+            outline_data, ignore_nulls=True, allow_missing=True
+        )
         expected_ok = ast_data.compare(expected_data)
+        if not outline_with_error and expected_data.has_error():
+            expected_ok = False
 
         outline_marker = good_marker
         if not outline_ok:
