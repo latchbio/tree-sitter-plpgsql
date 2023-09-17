@@ -125,7 +125,6 @@ rendered_re = re.compile(
     r"""
     ^
     (?P<indent>[ ]*)
-    (?P<comment>\#[ ]*)?
     (
         (?P<idx>\d+)
         [ ]+
@@ -137,12 +136,17 @@ rendered_re = re.compile(
         [ ]*
     )?
     (?P<type>\w+)?
-    (?P<raw_type>['"][^'"]*['"])?
+    (?P<raw_type>
+        '[^']*' |
+        "[^"]*"
+    )?
     (
         :
         [ ]+
         (?P<text>
             b'.*' |
+            b".*" |
+            '.*' |
             ".*"
         )
     )?
@@ -159,13 +163,12 @@ def read_rendered(data: str):
         if len(l) == 0:
             continue
 
+        if l.lstrip()[0] == "#":
+            continue
+
         match = rendered_re.match(l)
         if match is None:
             raise RuntimeError(f"invalid line: {repr(l)}")
-
-        comment: str | None = match.group("comment")
-        if comment is not None:
-            continue
 
         indent_str: str = match.group("indent")
         idx: str | None = match.group("idx")

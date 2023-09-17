@@ -694,7 +694,7 @@ module.exports = grammar({
                 kw("hour"),
                 kw("minute"),
                 kw("second"),
-                $.constant_string
+                f("field", $.constant_string)
               ),
               kw("from"),
               f("expression", $.expression)
@@ -739,12 +739,14 @@ module.exports = grammar({
               f("expression", $.expression),
               choice(
                 s(
-                  opt(kw("from"), f("from", $.expression)),
+                  kw("from"),
+                  f("from", $.expression),
                   opt(kw("for"), f("for", $.expression))
                 ),
                 s(
                   // not SQL but Postgres allows it
-                  opt(kw("for"), f("for", $.expression)),
+                  kw("for"),
+                  f("for", $.expression),
                   opt(kw("from"), f("from", $.expression))
                 ),
                 s(
@@ -778,7 +780,7 @@ module.exports = grammar({
               // i.e. expr_list
               // note: this should really only accept up to two expressions
               // but postgres will parse an entire list anyway
-              f("expressions", $.expression)
+              comma(f("expressions", $.expression))
             )
           ),
           s(
@@ -796,10 +798,8 @@ module.exports = grammar({
               kw("least"),
               kw("xmlconcat")
             ),
-            parcomma(
-              // i.e. expr_list
-              f("expressions", $.expression)
-            )
+            // i.e. expr_list
+            parcomma(f("expressions", $.expression))
           )
         )
       ),
