@@ -533,9 +533,11 @@ module.exports = grammar({
       ),
 
     column_label: ($) =>
+      // todo
       // note: allows all keywords
       f("identifier", $.identifier),
     bare_column_label: ($) =>
+      // todo
       // note: allows only certain keywords
       // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L17544
       f("identifier", $.identifier),
@@ -605,12 +607,12 @@ module.exports = grammar({
       s(kw("order"), kw("by"), comma(f("instructions", $.sort_clause_item))),
 
     // i.e. Typename
-    type_name: ($) => "bigint",
+    type_name: ($) => choice("bigint", "todo"),
 
     // >>> Expressions
 
-    constant_integer: ($) => /\d+/,
-    constant_string: ($) => /'[^']*'/,
+    constant_integer: ($) => /\d+/, // todo
+    constant_string: ($) => /'[^']*'/, // todo
 
     // i.e. b_expr
     expression_restricted: ($) => choice($.constant_integer, $.constant_string),
@@ -800,7 +802,8 @@ module.exports = grammar({
             ),
             // i.e. expr_list
             parcomma(f("expressions", $.expression))
-          )
+          ),
+          "todo"
         )
       ),
 

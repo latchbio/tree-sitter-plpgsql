@@ -272,6 +272,38 @@ source_file
                         (keywords) nfc
                         (punctuation): ")"
 
+                (tables) select_from_function_table
+                    (function_call) expression_function_call_special
+                        (keywords) overlay
+                        (punctuation): "("
+                        (expression): "1"
+                        (keywords) placing
+                        (replacement): "2"
+                        (keywords) from
+                        (start): "3"
+                        (punctuation): ")"
+                (tables) select_from_function_table
+                    (function_call) expression_function_call_special
+                        (keywords) overlay
+                        (punctuation): "("
+                        (expression): "1"
+                        (keywords) placing
+                        (replacement): "2"
+                        (keywords) from
+                        (start): "3"
+                        (keywords) for
+                        (length): "4"
+                        (punctuation): ")"
+
+                (tables) select_from_function_table
+                    (function_call) expression_function_call_special
+                        (keywords) position
+                        (punctuation): "("
+                        (expression): "1"
+                        (keywords) in
+                        (haystack): "2"
+                        (punctuation): ")"
+
 """
 
 expected = r"""
@@ -566,7 +598,8 @@ source_file
                         1 (punctuation) '(': b'('
                         2 (expression) constant_integer: b'1'
                         3 (keywords) as: b'as'
-                        4 (type) type_name: b'bigint'
+                        4 (type) type_name
+                            0 bigint: b'bigint'
                         5 (punctuation) ')': b')'
                 55 (punctuation) ',': b','
                 56 (tables) select_from_function_table
@@ -713,7 +746,8 @@ source_file
                         1 (punctuation) '(': b'('
                         2 (expression) constant_integer: b'1'
                         3 (keywords) as: b'as'
-                        4 (type) type_name: b'bigint'
+                        4 (type) type_name
+                            0 bigint: b'bigint'
                         5 (punctuation) ')': b')'
                 85 (punctuation) ',': b','
                 86 (tables) select_from_function_table
