@@ -92,7 +92,7 @@ class NodeData:
             for a, b in zip(self.children, that.children)
         )
 
-    def render(self, *, indent="  "):
+    def render(self, *, indent="    "):
         res = ""
         if self.idx is not None:
             res += f"{self.idx} "
@@ -111,7 +111,7 @@ class NodeData:
 
         if len(self.children) > 0:
             children = "\n".join(
-                indent + x.render(indent=indent + "  ") for x in self.children
+                indent + x.render(indent=indent + "    ") for x in self.children
             )
             res += f"\n{children}"
 

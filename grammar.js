@@ -5,7 +5,6 @@ const anon = (rule) => alias(rule, "");
 const sep = (rule, sep) => s(rule, repeat(s(punct(sep), rule)));
 
 const punct = (x) => f("punctuation", x);
-const op = (x) => f("operator", x);
 
 const comma = (...rule) => sep(s(...rule), ",");
 const parens = (...rule) => s(punct("("), ...rule, punct(")"));
@@ -13,26 +12,24 @@ const parcomma = (...rule) => parens(comma(...rule));
 const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
-const kw = (name) =>
-  f(
-    "keywords",
-    alias(
-      token(
-        prec(
-          1,
-          // name
-          new RegExp(
-            // limited version that will only map A-Z to a-z
-            // this implementation is correct as long as all keywords are ASCII
-            Array.from(name)
-              .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
-              .join("")
-          )
+const kw_base = (name) =>
+  alias(
+    token(
+      prec(
+        1,
+        // name
+        new RegExp(
+          // limited version that will only map A-Z to a-z
+          // this implementation is correct as long as all keywords are ASCII
+          Array.from(name)
+            .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
+            .join("")
         )
-      ),
-      name
-    )
+      )
+    ),
+    name
   );
+const kw = (name) => f("keywords", kw_base(name));
 
 module.exports = grammar({
   name: "plpgsql",
@@ -48,12 +45,17 @@ module.exports = grammar({
     $.operator,
     $.operator_generic_possibly_qualified,
     $.operator_possibly_qualified,
+
     $.indirection_item,
     $.expression,
     $.expression_restricted,
     $.expression_function_call,
   ],
   inline: ($) => [
+    $.keyword_unreserved,
+    $.keyword_column_identifier,
+    $.keyword_name_type_or_function,
+
     $.name,
     $.attr_name,
     $.func_name,
@@ -78,20 +80,7 @@ module.exports = grammar({
     operator_generic: ($) => /[~!@#^&|`?+\-*/%<>=]+/,
     // i.e. MathOp
     operator_math: ($) =>
-      choice(
-        op("+"),
-        op("-"),
-        op("*"),
-        op("/"),
-        op("%"),
-        op("^"),
-        op("<"),
-        op(">"),
-        op("="),
-        op("<="),
-        op(">="),
-        op("<>")
-      ),
+      choice("+", "-", "*", "/", "%", "^", "<", ">", "=", "<=", ">=", "<>"),
     // i.e. all_Op
     operator: ($) => choice($.operator_generic, $.operator_math),
 
@@ -117,15 +106,432 @@ module.exports = grammar({
     // >>> Identifiers
     identifier: ($) => /[A-Za-z\x80-\xff_][A-Za-z\x80-\xff0-9_$]*/,
 
+    // i.e. unreserved_keyword
+    keyword_unreserved: ($) =>
+      choice(
+        kw_base("abort"),
+        kw_base("absent"),
+        kw_base("absolute"),
+        kw_base("access"),
+        kw_base("action"),
+        kw_base("add"),
+        kw_base("admin"),
+        kw_base("after"),
+        kw_base("aggregate"),
+        kw_base("also"),
+        kw_base("alter"),
+        kw_base("always"),
+        kw_base("asensitive"),
+        kw_base("assertion"),
+        kw_base("assignment"),
+        kw_base("at"),
+        kw_base("atomic"),
+        kw_base("attach"),
+        kw_base("attribute"),
+        kw_base("backward"),
+        kw_base("before"),
+        kw_base("begin"),
+        kw_base("breadth"),
+        kw_base("by"),
+        kw_base("cache"),
+        kw_base("call"),
+        kw_base("called"),
+        kw_base("cascade"),
+        kw_base("cascaded"),
+        kw_base("catalog"),
+        kw_base("chain"),
+        kw_base("characteristics"),
+        kw_base("checkpoint"),
+        kw_base("class"),
+        kw_base("close"),
+        kw_base("cluster"),
+        kw_base("columns"),
+        kw_base("comment"),
+        kw_base("comments"),
+        kw_base("commit"),
+        kw_base("committed"),
+        kw_base("compression"),
+        kw_base("configuration"),
+        kw_base("conflict"),
+        kw_base("connection"),
+        kw_base("constraints"),
+        kw_base("content"),
+        kw_base("continue"),
+        kw_base("conversion"),
+        kw_base("copy"),
+        kw_base("cost"),
+        kw_base("csv"),
+        kw_base("cube"),
+        kw_base("current"),
+        kw_base("cursor"),
+        kw_base("cycle"),
+        kw_base("data"),
+        kw_base("database"),
+        kw_base("day"),
+        kw_base("deallocate"),
+        kw_base("declare"),
+        kw_base("defaults"),
+        kw_base("deferred"),
+        kw_base("definer"),
+        kw_base("delete"),
+        kw_base("delimiter"),
+        kw_base("delimiters"),
+        kw_base("depends"),
+        kw_base("depth"),
+        kw_base("detach"),
+        kw_base("dictionary"),
+        kw_base("disable"),
+        kw_base("discard"),
+        kw_base("document"),
+        kw_base("domain"),
+        kw_base("double"),
+        kw_base("drop"),
+        kw_base("each"),
+        kw_base("enable"),
+        kw_base("encoding"),
+        kw_base("encrypted"),
+        kw_base("enum"),
+        kw_base("escape"),
+        kw_base("event"),
+        kw_base("exclude"),
+        kw_base("excluding"),
+        kw_base("exclusive"),
+        kw_base("execute"),
+        kw_base("explain"),
+        kw_base("expression"),
+        kw_base("extension"),
+        kw_base("external"),
+        kw_base("family"),
+        kw_base("filter"),
+        kw_base("finalize"),
+        kw_base("first"),
+        kw_base("following"),
+        kw_base("force"),
+        kw_base("format"),
+        kw_base("forward"),
+        kw_base("function"),
+        kw_base("functions"),
+        kw_base("generated"),
+        kw_base("global"),
+        kw_base("granted"),
+        kw_base("groups"),
+        kw_base("handler"),
+        kw_base("header"),
+        kw_base("hold"),
+        kw_base("hour"),
+        kw_base("identity"),
+        kw_base("if"),
+        kw_base("immediate"),
+        kw_base("immutable"),
+        kw_base("implicit"),
+        kw_base("import"),
+        kw_base("include"),
+        kw_base("including"),
+        kw_base("increment"),
+        kw_base("indent"),
+        kw_base("index"),
+        kw_base("indexes"),
+        kw_base("inherit"),
+        kw_base("inherits"),
+        kw_base("inline"),
+        kw_base("input"),
+        kw_base("insensitive"),
+        kw_base("insert"),
+        kw_base("instead"),
+        kw_base("invoker"),
+        kw_base("isolation"),
+        kw_base("key"),
+        kw_base("keys"),
+        kw_base("label"),
+        kw_base("language"),
+        kw_base("large"),
+        kw_base("last"),
+        kw_base("leakproof"),
+        kw_base("level"),
+        kw_base("listen"),
+        kw_base("load"),
+        kw_base("local"),
+        kw_base("location"),
+        kw_base("lock"),
+        kw_base("locked"),
+        kw_base("logged"),
+        kw_base("mapping"),
+        kw_base("match"),
+        kw_base("matched"),
+        kw_base("materialized"),
+        kw_base("maxvalue"),
+        kw_base("merge"),
+        kw_base("method"),
+        kw_base("minute"),
+        kw_base("minvalue"),
+        kw_base("mode"),
+        kw_base("month"),
+        kw_base("move"),
+        kw_base("name"),
+        kw_base("names"),
+        kw_base("new"),
+        kw_base("next"),
+        kw_base("nfc"),
+        kw_base("nfd"),
+        kw_base("nfkc"),
+        kw_base("nfkd"),
+        kw_base("no"),
+        kw_base("normalized"),
+        kw_base("nothing"),
+        kw_base("notify"),
+        kw_base("nowait"),
+        kw_base("nulls"),
+        kw_base("object"),
+        kw_base("of"),
+        kw_base("off"),
+        kw_base("oids"),
+        kw_base("old"),
+        kw_base("operator"),
+        kw_base("option"),
+        kw_base("options"),
+        kw_base("ordinality"),
+        kw_base("others"),
+        kw_base("over"),
+        kw_base("overriding"),
+        kw_base("owned"),
+        kw_base("owner"),
+        kw_base("parallel"),
+        kw_base("parameter"),
+        kw_base("parser"),
+        kw_base("partial"),
+        kw_base("partition"),
+        kw_base("passing"),
+        kw_base("password"),
+        kw_base("plans"),
+        kw_base("policy"),
+        kw_base("preceding"),
+        kw_base("prepare"),
+        kw_base("prepared"),
+        kw_base("preserve"),
+        kw_base("prior"),
+        kw_base("privileges"),
+        kw_base("procedural"),
+        kw_base("procedure"),
+        kw_base("procedures"),
+        kw_base("program"),
+        kw_base("publication"),
+        kw_base("quote"),
+        kw_base("range"),
+        kw_base("read"),
+        kw_base("reassign"),
+        kw_base("recheck"),
+        kw_base("recursive"),
+        kw_base("ref"),
+        kw_base("referencing"),
+        kw_base("refresh"),
+        kw_base("reindex"),
+        kw_base("relative"),
+        kw_base("release"),
+        kw_base("rename"),
+        kw_base("repeatable"),
+        kw_base("replace"),
+        kw_base("replica"),
+        kw_base("reset"),
+        kw_base("restart"),
+        kw_base("restrict"),
+        kw_base("return"),
+        kw_base("returns"),
+        kw_base("revoke"),
+        kw_base("role"),
+        kw_base("rollback"),
+        kw_base("rollup"),
+        kw_base("routine"),
+        kw_base("routines"),
+        kw_base("rows"),
+        kw_base("rule"),
+        kw_base("savepoint"),
+        kw_base("scalar"),
+        kw_base("schema"),
+        kw_base("schemas"),
+        kw_base("scroll"),
+        kw_base("search"),
+        kw_base("second"),
+        kw_base("security"),
+        kw_base("sequence"),
+        kw_base("sequences"),
+        kw_base("serializable"),
+        kw_base("server"),
+        kw_base("session"),
+        kw_base("set"),
+        kw_base("sets"),
+        kw_base("share"),
+        kw_base("show"),
+        kw_base("simple"),
+        kw_base("skip"),
+        kw_base("snapshot"),
+        kw_base("sql"),
+        kw_base("stable"),
+        kw_base("standalone"),
+        kw_base("start"),
+        kw_base("statement"),
+        kw_base("statistics"),
+        kw_base("stdin"),
+        kw_base("stdout"),
+        kw_base("storage"),
+        kw_base("stored"),
+        kw_base("strict"),
+        kw_base("strip"),
+        kw_base("subscription"),
+        kw_base("support"),
+        kw_base("sysid"),
+        kw_base("system"),
+        kw_base("tables"),
+        kw_base("tablespace"),
+        kw_base("temp"),
+        kw_base("template"),
+        kw_base("temporary"),
+        kw_base("text"),
+        kw_base("ties"),
+        kw_base("transaction"),
+        kw_base("transform"),
+        kw_base("trigger"),
+        kw_base("truncate"),
+        kw_base("trusted"),
+        kw_base("type"),
+        kw_base("types"),
+        kw_base("uescape"),
+        kw_base("unbounded"),
+        kw_base("uncommitted"),
+        kw_base("unencrypted"),
+        kw_base("unknown"),
+        kw_base("unlisten"),
+        kw_base("unlogged"),
+        kw_base("until"),
+        kw_base("update"),
+        kw_base("vacuum"),
+        kw_base("valid"),
+        kw_base("validate"),
+        kw_base("validator"),
+        kw_base("value"),
+        kw_base("varying"),
+        kw_base("version"),
+        kw_base("view"),
+        kw_base("views"),
+        kw_base("volatile"),
+        kw_base("whitespace"),
+        kw_base("within"),
+        kw_base("without"),
+        kw_base("work"),
+        kw_base("wrapper"),
+        kw_base("write"),
+        kw_base("xml"),
+        kw_base("year"),
+        kw_base("yes"),
+        kw_base("zone")
+      ),
+
+    // i.e. col_name_keyword
+    keyword_column_identifier: ($) =>
+      choice(
+        kw_base("between"),
+        kw_base("bigint"),
+        kw_base("bit"),
+        kw_base("boolean"),
+        kw_base("char"),
+        kw_base("character"),
+        kw_base("coalesce"),
+        kw_base("dec"),
+        kw_base("decimal"),
+        kw_base("exists"),
+        kw_base("extract"),
+        kw_base("float"),
+        kw_base("greatest"),
+        kw_base("grouping"),
+        kw_base("inout"),
+        kw_base("int"),
+        kw_base("integer"),
+        kw_base("interval"),
+        kw_base("json"),
+        kw_base("json_array"),
+        kw_base("json_arrayagg"),
+        kw_base("json_object"),
+        kw_base("json_objectagg"),
+        kw_base("json_scalar"),
+        kw_base("json_serialize"),
+        kw_base("least"),
+        kw_base("national"),
+        kw_base("nchar"),
+        kw_base("none"),
+        kw_base("normalize"),
+        kw_base("nullif"),
+        kw_base("numeric"),
+        kw_base("out"),
+        kw_base("overlay"),
+        kw_base("position"),
+        kw_base("precision"),
+        kw_base("real"),
+        kw_base("row"),
+        kw_base("setof"),
+        kw_base("smallint"),
+        kw_base("substring"),
+        kw_base("time"),
+        kw_base("timestamp"),
+        kw_base("treat"),
+        kw_base("trim"),
+        kw_base("values"),
+        kw_base("varchar"),
+        kw_base("xmlattributes"),
+        kw_base("xmlconcat"),
+        kw_base("xmlelement"),
+        kw_base("xmlexists"),
+        kw_base("xmlforest"),
+        kw_base("xmlnamespaces"),
+        kw_base("xmlparse"),
+        kw_base("xmlpi"),
+        kw_base("xmlroot"),
+        kw_base("xmlserialize"),
+        kw_base("xmltable")
+      ),
+
     // i.e. ColId
     column_identifier: ($) =>
-      // note: allows only certain keywords
-      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L16971
-      f("identifier", $.identifier),
-    type_function_name: ($) =>
-      // note: allows only certain keywords
-      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L16971
-      f("identifier", $.identifier),
+      f(
+        "identifier",
+        choice($.identifier, $.keyword_unreserved, $.keyword_column_identifier)
+      ),
+
+    // i.e. type_func_name_keyword
+    keyword_name_type_or_function: ($) =>
+      choice(
+        kw_base("authorization"),
+        kw_base("binary"),
+        kw_base("collation"),
+        kw_base("concurrently"),
+        kw_base("cross"),
+        kw_base("current_schema"),
+        kw_base("freeze"),
+        kw_base("full"),
+        kw_base("ilike"),
+        kw_base("inner"),
+        kw_base("is"),
+        kw_base("isnull"),
+        kw_base("join"),
+        kw_base("left"),
+        kw_base("like"),
+        kw_base("natural"),
+        kw_base("notnull"),
+        kw_base("outer"),
+        kw_base("overlaps"),
+        kw_base("right"),
+        kw_base("similar"),
+        kw_base("tablesample"),
+        kw_base("verbose")
+      ),
+    name_type_or_function: ($) =>
+      f(
+        "identifier",
+        choice(
+          $.identifier,
+          $.keyword_unreserved,
+          $.keyword_name_type_or_function
+        )
+      ),
+
     column_label: ($) =>
       // note: allows all keywords
       f("identifier", $.identifier),
@@ -139,7 +545,10 @@ module.exports = grammar({
     name_attribute: ($) => alias($.column_label, "name_attribute"),
     // i.e. func_name
     name_function: ($) =>
-      choice($.type_function_name, alias($.name_qualified1, $.name_qualified)),
+      choice(
+        $.name_type_or_function,
+        alias($.name_qualified1, $.name_qualified)
+      ),
     // i.e. param_name
     // note: the original is actually an alias to name_function but a note
     // explains that they would make it ColId if conflicts could be resolved
@@ -440,12 +849,14 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. relation_expr
     select_from_relation_expression: ($) =>
       choice(
         s(f("name", $.name_qualified), opt(punct("*"))),
         s(kw("only"), f("name", $.name_qualified)),
         s(kw("only"), parens(f("name", $.name_qualified)))
       ),
+    // i.e. alias_clause
     select_from_table_reference_alias_clause: ($) =>
       s(
         opt(kw("as")),
@@ -459,11 +870,13 @@ module.exports = grammar({
         parcomma(f("arguments", $.expression)),
         opt(kw("repeatable"), parens(f("seed", $.expression)))
       ),
+    // i.e. tablesample_clause
     select_from_table_reference: ($) =>
       s(
         choice(
           s(
             f("relation", $.select_from_relation_expression),
+            // i.e. opt_alias_clause
             opt(f("alias", $.select_from_table_reference_alias_clause)),
             opt(f("tablesample", $.select_from_tablesample_clause))
           )
@@ -493,14 +906,15 @@ module.exports = grammar({
     // i.e. func_table
     select_from_function_table: ($) =>
       s(
+        opt(kw("lateral")),
         choice(
-          $.expression_function_call,
+          f("function_call", $.expression_function_call),
           s(
             kw("rows"),
             kw("from"),
             parcomma(
               // i.e. rowsfrom_list
-              $.select_from_rows_from_item
+              f("columns", $.select_from_rows_from_item)
             )
           )
         ),
