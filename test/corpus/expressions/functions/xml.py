@@ -468,9 +468,8 @@ source_file
             2 (keywords) document: b'document'
             3 (expression) constant_integer: b'1'
             4 (keywords) as: b'as'
-            5 (type) type_name_simple
-                0 type_name_numeric
-                    0 (keywords) bigint: b'bigint'
+            5 (type) type_name_numeric
+                0 (keywords) bigint: b'bigint'
             6 (punctuation) ')': b')'
     46 (punctuation) ';': b';'
     47 expression_function_call_windowed
@@ -480,9 +479,8 @@ source_file
             2 (keywords) content: b'content'
             3 (expression) constant_integer: b'1'
             4 (keywords) as: b'as'
-            5 (type) type_name_simple
-                0 type_name_numeric
-                    0 (keywords) bigint: b'bigint'
+            5 (type) type_name_numeric
+                0 (keywords) bigint: b'bigint'
             6 (punctuation) ')': b')'
     48 (punctuation) ';': b';'
     49 expression_function_call_windowed
@@ -492,9 +490,8 @@ source_file
             2 (keywords) document: b'document'
             3 (expression) constant_integer: b'1'
             4 (keywords) as: b'as'
-            5 (type) type_name_simple
-                0 type_name_numeric
-                    0 (keywords) bigint: b'bigint'
+            5 (type) type_name_numeric
+                0 (keywords) bigint: b'bigint'
             6 (keywords) indent: b'indent'
             7 (punctuation) ')': b')'
     50 (punctuation) ';': b';'
@@ -505,9 +502,8 @@ source_file
             2 (keywords) document: b'document'
             3 (expression) constant_integer: b'1'
             4 (keywords) as: b'as'
-            5 (type) type_name_simple
-                0 type_name_numeric
-                    0 (keywords) bigint: b'bigint'
+            5 (type) type_name_numeric
+                0 (keywords) bigint: b'bigint'
             6 (keywords) no: b'no'
             7 (keywords) indent: b'indent'
             8 (punctuation) ')': b')'

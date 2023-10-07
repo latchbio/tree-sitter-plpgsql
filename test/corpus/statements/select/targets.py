@@ -40,7 +40,8 @@ source_file
             4 (targets) select_target
                 0 (value) constant_integer: b'2'
                 1 (alias) bare_column_label
-                    0 (identifier) identifier: b'action'
+                    0 (identifier) keyword_bare_label
+                        0 action: b'action'
             5 (punctuation) ',': b','
             6 (punctuation) comment: b'-- note: unreserved keyword'
             7 (targets) select_target
