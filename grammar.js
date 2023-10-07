@@ -708,11 +708,33 @@ module.exports = grammar({
     sort_clause: ($) =>
       s(kw("order"), kw("by"), comma(f("instructions", $.sort_clause_item))),
 
+    // i.e. Numeric
+    type_name_numeric: ($) =>
+      choice(
+        kw("int"),
+        kw("integer"),
+        kw("smallint"),
+        kw("bigint"),
+        kw("real"),
+        s(kw("float"), opt(parens($.constant_integer))),
+        s(kw("double"), kw("precision")),
+        kw("decimal"), // todo opt_type_modifiers
+        kw("dec"), // todo opt_type_modifiers
+        kw("numeric"), // todo opt_type_modifiers
+        kw("boolean")
+      ),
+
+    // i.e. SimpleTypename
+    // todo
+    type_name_simple: ($) => choice($.type_name_numeric),
+
     // i.e. Typename
-    type_name: ($) => choice("bigint", "todo"),
+    // todo
+    type_name: ($) => choice($.type_name_simple),
 
     // >>> Expressions
 
+    // i.e. Iconst
     constant_integer: ($) => /\d+/, // todo
     constant_string: ($) => /'[^']*'/, // todo
 
@@ -727,11 +749,11 @@ module.exports = grammar({
 
     // i.e. b_expr
     // todo
-    expression_restricted: ($) => choice($.expression_x_restricted, "todo"),
+    expression_restricted: ($) => choice($.expression_x_restricted),
 
     // i.e. a_expr
     // todo
-    expression: ($) => choice($.expression_x_restricted, "todo"),
+    expression: ($) => choice($.expression_x_restricted),
 
     // i.e. func_arg_expr
     function_argument: ($) =>
@@ -950,7 +972,74 @@ module.exports = grammar({
               )
             )
           ),
-          "todo"
+          s(
+            kw("xmlexists"),
+            parens(
+              f("query", $.expression_x_restricted),
+              // i.e. xmlexists_argument
+              kw("passing"),
+              // i.e. xml_passing_mech
+              opt(kw("by"), choice(kw("ref"), kw("value"))),
+              f("context", $.expression_x_restricted),
+              // i.e. xml_passing_mech
+              opt(kw("by"), choice(kw("ref"), kw("value")))
+            )
+          ),
+          s(
+            kw("xmlforest"),
+            // i.e. xml_attribute_list
+            parcomma(f("attributes", $.xml_attribute_item))
+          ),
+          s(
+            kw("xmlparse"),
+            parens(
+              // i.e. document_or_content
+              choice(kw("document"), kw("content")),
+              f("expression", $.expression),
+              opt(
+                // i.e. xml_whitespace_option
+                choice(kw("preserve"), kw("strip")),
+                kw("whitespace")
+              )
+            )
+          ),
+          s(
+            kw("xmlpi"),
+            parens(
+              kw("name"),
+              f("name", $.column_label),
+              opt(punct(","), f("content", $.expression))
+            )
+          ),
+          s(
+            kw("xmlroot"),
+            parens(
+              f("expression", $.expression),
+              punct(","),
+              // i.e. xml_root_version
+              kw("version"),
+              choice(f("version", $.expression), s(kw("no"), kw("value"))),
+              // i.e. opt_xml_root_standalone
+              opt(
+                punct(","),
+                kw("standalone"),
+                choice(kw("yes"), s(kw("no"), opt("value")))
+              )
+            )
+          ),
+          s(
+            kw("xmlserialize"),
+            parens(
+              // i.e. document_or_content
+              choice(kw("document"), kw("content")),
+              f("expression", $.expression),
+              kw("as"),
+              f("type", $.type_name_simple),
+              // i.e. xml_indent_option
+              opt(opt(kw("no")), kw("indent"))
+            )
+          )
+          // todo
         )
       ),
 

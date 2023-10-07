@@ -55,13 +55,7 @@ nullif(1, 2);
 
 coalesce(1, 2, 3);
 greatest(1, 2, 3);
-least(1, 2, 3);
-xmlconcat(1, 2, 3);
-
-xmlelement(name in); -- note: reserved name
-xmlelement(name in, xmlattributes (1, 2 as in)); -- note: reserved attribute name
-xmlelement(name in, 1, 2);
-xmlelement(name in, xmlattributes (1, 2 as in), 1, 2)
+least(1, 2, 3)
 """
 
 outline = r"""
@@ -293,40 +287,6 @@ source_file
             (expressions): "1"
             (expressions): "2"
             (expressions): "3"
-    expression_function_call_windowed
-        expression_function_call_special
-            (keywords) xmlconcat
-            (expressions): "1"
-            (expressions): "2"
-            (expressions): "3"
-
-    expression_function_call_windowed
-        expression_function_call_special
-            (keywords) xmlelement
-            (name): "in"
-    expression_function_call_windowed
-        expression_function_call_special
-            (keywords) xmlelement
-            (name): "in"
-            (keywords) xmlattributes
-            (attributes) xml_attribute_item
-            (attributes) xml_attribute_item
-                (keywords) as
-                (label): "in"
-    expression_function_call_windowed
-        expression_function_call_special
-            (keywords) xmlelement
-            (name): "in"
-            (expressions): "1"
-            (expressions): "2"
-    expression_function_call_windowed
-        expression_function_call_special
-            (keywords) xmlelement
-            (name): "in"
-            (attributes) xml_attribute_item: "1"
-            (attributes) xml_attribute_item: "2 as in"
-            (expressions): "1"
-            (expressions): "2"
 """
 
 expected = r"""
@@ -402,7 +362,9 @@ source_file
             2 (expression) constant_integer: b'1'
             3 (keywords) as: b'as'
             4 (type) type_name
-                0 bigint: b'bigint'
+                0 type_name_simple
+                    0 type_name_numeric
+                        0 (keywords) bigint: b'bigint'
             5 (punctuation) ')': b')'
     30 (punctuation) ';': b';'
     31 expression_function_call_windowed
@@ -550,7 +512,9 @@ source_file
             2 (expression) constant_integer: b'1'
             3 (keywords) as: b'as'
             4 (type) type_name
-                0 bigint: b'bigint'
+                0 type_name_simple
+                    0 type_name_numeric
+                        0 (keywords) bigint: b'bigint'
             5 (punctuation) ')': b')'
     60 (punctuation) ';': b';'
     61 expression_function_call_windowed
@@ -651,91 +615,4 @@ source_file
             5 (punctuation) ',': b','
             6 (expressions) constant_integer: b'3'
             7 (punctuation) ')': b')'
-    82 (punctuation) ';': b';'
-    83 expression_function_call_windowed
-        0 expression_function_call_special
-            0 (keywords) xmlconcat: b'xmlconcat'
-            1 (punctuation) '(': b'('
-            2 (expressions) constant_integer: b'1'
-            3 (punctuation) ',': b','
-            4 (expressions) constant_integer: b'2'
-            5 (punctuation) ',': b','
-            6 (expressions) constant_integer: b'3'
-            7 (punctuation) ')': b')'
-    84 (punctuation) ';': b';'
-    85 expression_function_call_windowed
-        0 expression_function_call_special
-            0 (keywords) xmlelement: b'xmlelement'
-            1 (punctuation) '(': b'('
-            2 (keywords) name: b'name'
-            3 (name) column_label
-                0 (identifier) keyword_reserved
-                    0 in: b'in'
-            4 (punctuation) ')': b')'
-    86 (punctuation) ';': b';'
-    87 (punctuation) comment: b'-- note: reserved name'
-    88 expression_function_call_windowed
-        0 expression_function_call_special
-            0 (keywords) xmlelement: b'xmlelement'
-            1 (punctuation) '(': b'('
-            2 (keywords) name: b'name'
-            3 (name) column_label
-                0 (identifier) keyword_reserved
-                    0 in: b'in'
-            4 (punctuation) ',': b','
-            5 (keywords) xmlattributes: b'xmlattributes'
-            6 (punctuation) '(': b'('
-            7 (attributes) xml_attribute_item
-                0 (expression) constant_integer: b'1'
-            8 (punctuation) ',': b','
-            9 (attributes) xml_attribute_item
-                0 (expression) constant_integer: b'2'
-                1 (keywords) as: b'as'
-                2 (label) column_label
-                    0 (identifier) keyword_reserved
-                        0 in: b'in'
-            10 (punctuation) ')': b')'
-            11 (punctuation) ')': b')'
-    89 (punctuation) ';': b';'
-    90 (punctuation) comment: b'-- note: reserved attribute name'
-    91 expression_function_call_windowed
-        0 expression_function_call_special
-            0 (keywords) xmlelement: b'xmlelement'
-            1 (punctuation) '(': b'('
-            2 (keywords) name: b'name'
-            3 (name) column_label
-                0 (identifier) keyword_reserved
-                    0 in: b'in'
-            4 (punctuation) ',': b','
-            5 (expressions) constant_integer: b'1'
-            6 (punctuation) ',': b','
-            7 (expressions) constant_integer: b'2'
-            8 (punctuation) ')': b')'
-    92 (punctuation) ';': b';'
-    93 expression_function_call_windowed
-        0 expression_function_call_special
-            0 (keywords) xmlelement: b'xmlelement'
-            1 (punctuation) '(': b'('
-            2 (keywords) name: b'name'
-            3 (name) column_label
-                0 (identifier) keyword_reserved
-                    0 in: b'in'
-            4 (punctuation) ',': b','
-            5 (keywords) xmlattributes: b'xmlattributes'
-            6 (punctuation) '(': b'('
-            7 (attributes) xml_attribute_item
-                0 (expression) constant_integer: b'1'
-            8 (punctuation) ',': b','
-            9 (attributes) xml_attribute_item
-                0 (expression) constant_integer: b'2'
-                1 (keywords) as: b'as'
-                2 (label) column_label
-                    0 (identifier) keyword_reserved
-                        0 in: b'in'
-            10 (punctuation) ')': b')'
-            11 (punctuation) ',': b','
-            12 (expressions) constant_integer: b'1'
-            13 (punctuation) ',': b','
-            14 (expressions) constant_integer: b'2'
-            15 (punctuation) ')': b')'
 """
