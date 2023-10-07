@@ -13,7 +13,15 @@ double precision;
 decimal; decimal(1, 2, 3);
 dec; dec(1, 2, 3);
 numeric; numeric(1, 2, 3);
-boolean
+boolean;
+
+bit; bit varying; bit(1, 2, 3); bit varying (1, 2, 3);
+
+character; char;
+national character; char varying;
+varchar;
+nchar; nchar varying;
+national char varying(123)
 """
 
 outline = r"""
@@ -66,6 +74,40 @@ source_file
         (keywords) numeric
         type_modifiers: "(1, 2, 3)"
     type_name_numeric: "boolean"
+
+    type_name_bit: "bit"
+    type_name_bit
+        (keywords) bit
+        (keywords) varying
+    type_name_bit
+        (keywords) bit
+        (length_expressions): "1"
+        (length_expressions): "2"
+        (length_expressions): "3"
+    type_name_bit
+        (keywords) bit
+        (keywords) varying
+        (length_expressions): "1"
+        (length_expressions): "2"
+        (length_expressions): "3"
+
+    type_name_character: "character"
+    type_name_character: "char"
+    type_name_character
+        (keywords) national
+        (keywords) character
+    type_name_character
+        (keywords) char
+        (keywords) varying
+    type_name_character: "varchar"
+    type_name_character: "nchar"
+    type_name_character
+        (keywords) nchar
+        (keywords) varying
+    type_name_character
+        (keywords) national
+        (keywords) char
+        (length): "123"
 """
 
 expected = r"""
@@ -204,4 +246,64 @@ source_file
     40 (punctuation) ';': b';'
     41 type_name_numeric
         0 (keywords) boolean: b'boolean'
+    42 (punctuation) ';': b';'
+    43 type_name_bit
+        0 (keywords) bit: b'bit'
+    44 (punctuation) ';': b';'
+    45 type_name_bit
+        0 (keywords) bit: b'bit'
+        1 (keywords) varying: b'varying'
+    46 (punctuation) ';': b';'
+    47 type_name_bit
+        0 (keywords) bit: b'bit'
+        1 (punctuation) '(': b'('
+        2 (length_expressions) constant_integer: b'1'
+        3 (punctuation) ',': b','
+        4 (length_expressions) constant_integer: b'2'
+        5 (punctuation) ',': b','
+        6 (length_expressions) constant_integer: b'3'
+        7 (punctuation) ')': b')'
+    48 (punctuation) ';': b';'
+    49 type_name_bit
+        0 (keywords) bit: b'bit'
+        1 (keywords) varying: b'varying'
+        2 (punctuation) '(': b'('
+        3 (length_expressions) constant_integer: b'1'
+        4 (punctuation) ',': b','
+        5 (length_expressions) constant_integer: b'2'
+        6 (punctuation) ',': b','
+        7 (length_expressions) constant_integer: b'3'
+        8 (punctuation) ')': b')'
+    50 (punctuation) ';': b';'
+    51 type_name_character
+        0 (keywords) character: b'character'
+    52 (punctuation) ';': b';'
+    53 type_name_character
+        0 (keywords) char: b'char'
+    54 (punctuation) ';': b';'
+    55 type_name_character
+        0 (keywords) national: b'national'
+        1 (keywords) character: b'character'
+    56 (punctuation) ';': b';'
+    57 type_name_character
+        0 (keywords) char: b'char'
+        1 (keywords) varying: b'varying'
+    58 (punctuation) ';': b';'
+    59 type_name_character
+        0 (keywords) varchar: b'varchar'
+    60 (punctuation) ';': b';'
+    61 type_name_character
+        0 (keywords) nchar: b'nchar'
+    62 (punctuation) ';': b';'
+    63 type_name_character
+        0 (keywords) nchar: b'nchar'
+        1 (keywords) varying: b'varying'
+    64 (punctuation) ';': b';'
+    65 type_name_character
+        0 (keywords) national: b'national'
+        1 (keywords) char: b'char'
+        2 (keywords) varying: b'varying'
+        3 (punctuation) '(': b'('
+        4 (length) constant_integer: b'123'
+        5 (punctuation) ')': b')'
 """
