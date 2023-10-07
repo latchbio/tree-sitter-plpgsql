@@ -70,6 +70,9 @@ module.exports = grammar({
 
     $.name_attribute,
     $.name_parameter,
+
+    $.function_argument_list,
+    $.expression_list, // todo: unify the remaining expr_lists
   ],
   rules: {
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y
@@ -1151,11 +1154,7 @@ module.exports = grammar({
     sort_clause: ($) =>
       s(kw("order"), kw("by"), comma(f("instructions", $.sort_clause_item))),
 
-    type_modifiers: ($) =>
-      parcomma(
-        // i.e. expr_list
-        f("expressions", $.expression)
-      ),
+    type_modifiers: ($) => parens($.expression_list),
 
     // i.e. Numeric
     type_name_numeric: ($) =>
@@ -1295,12 +1294,18 @@ module.exports = grammar({
     // todo
     expression: ($) => choice($.expression_x_restricted),
 
+    // i.e. expr_list
+    expression_list: ($) => comma(f("expressions", $.expression)),
+
     // i.e. func_arg_expr
     function_argument: ($) =>
       s(
         opt(f("parameter", $.name_parameter), choice(punct(":="), punct("=>"))),
         f("expression", $.expression)
       ),
+
+    // i.e. func_arg_list
+    function_argument_list: ($) => comma(f("arguments", $.function_argument)),
 
     // i.e. func_application
     expression_function_call_generic: ($) =>
@@ -1312,13 +1317,11 @@ module.exports = grammar({
               f("arguments", "*"),
               s(
                 opt(choice(kw("all"), kw("distinct"))),
-                // i.e. func_arg_list
-                comma(f("arguments", $.function_argument)),
+                $.function_argument_list,
                 opt(f("sort_clause", $.sort_clause))
               ),
               s(
-                // i.e. func_arg_list
-                opt(comma(f("arguments", $.function_argument)), ","),
+                $.function_argument_list,
                 kw("variadic"),
                 f("variadic_argument", $.function_argument),
                 opt(f("sort_clause", $.sort_clause))
@@ -1461,10 +1464,9 @@ module.exports = grammar({
               opt(choice(kw("both"), kw("leading"), kw("trailing"))),
               // i.e. trim_list
               opt(opt(f("characters", $.expression)), kw("from")),
-              // i.e. expr_list
               // note: this should really only accept up to two expressions
               // but postgres will parse an entire list anyway
-              comma(f("expressions", $.expression))
+              $.expression_list
             )
           ),
           s(
@@ -1482,8 +1484,7 @@ module.exports = grammar({
               kw("least"),
               kw("xmlconcat")
             ),
-            // i.e. expr_list
-            parcomma(f("expressions", $.expression))
+            $.expression_list
           ),
           s(
             kw("xmlelement"),
@@ -1500,14 +1501,9 @@ module.exports = grammar({
                       // i.e. xml_attribute_list
                       parcomma(f("attributes", $.xml_attribute_item))
                     ),
-                    opt(
-                      punct(","),
-                      // i.e. expr_list
-                      comma(f("expressions", $.expression))
-                    )
+                    opt(punct(","), $.expression_list)
                   ),
-                  // i.e. expr_list
-                  comma(f("expressions", $.expression))
+                  $.expression_list
                 )
               )
             )
