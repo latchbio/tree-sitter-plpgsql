@@ -44,7 +44,9 @@ class NodeData:
 
         return any(x.has_error() for x in self.children)
 
-    def compare(self, that: "NodeData", *, ignore_nulls=False, allow_missing=False):
+    def compare(
+        self, that: "NodeData", *, ignore_nulls=False, allow_missing=False, indent=""
+    ):
         for name in node_data_checked_fields:
             a = getattr(self, name)
             b = getattr(that, name)
@@ -72,8 +74,12 @@ class NodeData:
                 a = self.children[idx]
 
                 while not a.compare(
-                    b, ignore_nulls=ignore_nulls, allow_missing=allow_missing
+                    b,
+                    ignore_nulls=ignore_nulls,
+                    allow_missing=allow_missing,
+                    indent=indent + "  ",
                 ):
+                    # print("- " + indent + a.render(recurse=False))
                     idx += 1
 
                     if idx >= len(self.children):
@@ -81,6 +87,7 @@ class NodeData:
                     a = self.children[idx]
 
                 idx += 1
+                # print("  " + indent + a.render(recurse=False))
 
             return True
 
@@ -88,11 +95,16 @@ class NodeData:
             return False
 
         return all(
-            a.compare(b, ignore_nulls=ignore_nulls, allow_missing=allow_missing)
+            a.compare(
+                b,
+                ignore_nulls=ignore_nulls,
+                allow_missing=allow_missing,
+                indent=indent + "  ",
+            )
             for a, b in zip(self.children, that.children)
         )
 
-    def render(self, *, indent="    "):
+    def render(self, *, indent="    ", recurse=True):
         res = ""
         if self.idx is not None:
             res += f"{self.idx} "
@@ -109,7 +121,7 @@ class NodeData:
         if self.text is not None:
             res += f": {repr(self.text)}"
 
-        if len(self.children) > 0:
+        if recurse and len(self.children) > 0:
             children = "\n".join(
                 indent + x.render(indent=indent + "    ") for x in self.children
             )

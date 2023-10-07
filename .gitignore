@@ -5,6 +5,9 @@
 /vscode_themes
 /test/out/
 __pycache__
+/target
+/sqlite
+/Cargo.lock
 
 /src/*
 !/src/scanner.cc

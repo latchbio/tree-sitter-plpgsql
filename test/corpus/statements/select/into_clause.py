@@ -30,26 +30,22 @@ source_file
                         (into_clause) select_into_clause
                                 (keywords) into
                                 (table_name) name_qualified
-                                        (identifier) column_identifier
-                                                (identifier) identifier
+                                        (identifier) column_identifier: "sometable"
         statement_select
                 simple_select
                         (into_clause) select_into_clause
                                 (table_name) name_qualified
-                                        (identifier) column_identifier
-                                                (identifier) identifier
+                                        (identifier) column_identifier: "someschema"
                                         (indirections) indirection_attribute_access
                                                 (punctuation) "."
-                                                (attribute) name_attribute
-                                                        (identifier) identifier
+                                                (attribute) name_attribute: "sometable"
         statement_select
                 simple_select
                         (into_clause) select_into_clause
                                 (table_name) name_qualified
-                                        (identifier) column_identifier
-                                                (identifier) identifier
-                                        (indirections) indirection_attribute_access
-                                        (indirections) indirection_attribute_access
+                                        (identifier) column_identifier: "someschema"
+                                        (indirections) indirection_attribute_access: ".sometable"
+                                        (indirections) indirection_attribute_access: ".somecolumn"
                                         (indirections) indirection_array_access
                                                 (punctuation) "["
                                                 (index) constant_integer: "123"
@@ -155,211 +151,211 @@ source_file
 
 expected = r"""
 source_file
-  0 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'sometable'
-  1 (punctuation) ';': b';'
-  2 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'someschema'
-          1 (indirections) indirection_attribute_access
-            0 (punctuation) '.': b'.'
-            1 (attribute) name_attribute
-              0 (identifier) identifier: b'sometable'
-  3 (punctuation) ';': b';'
-  4 (punctuation) comment: b'-- should allow all indirections'
-  5 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'someschema'
-          1 (indirections) indirection_attribute_access
-            0 (punctuation) '.': b'.'
-            1 (attribute) name_attribute
-              0 (identifier) identifier: b'sometable'
-          2 (indirections) indirection_attribute_access
-            0 (punctuation) '.': b'.'
-            1 (attribute) name_attribute
-              0 (identifier) identifier: b'somecolumn'
-          3 (indirections) indirection_array_access
-            0 (punctuation) '[': b'['
-            1 (index) constant_integer: b'123'
-            2 (punctuation) ']': b']'
-          4 (indirections) indirection_slice
-            0 (punctuation) '[': b'['
-            1 (lower_bound) constant_integer: b'12'
-            2 (punctuation) ':': b':'
-            3 (upper_bound) constant_integer: b'34'
-            4 (punctuation) ']': b']'
-          5 (indirections) indirection_attribute_access
-            0 (punctuation) '.': b'.'
-            1 (attribute) '*': b'*'
-  6 (punctuation) ';': b';'
-  7 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) temporary: b'temporary'
-        2 (keywords) table: b'table'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  8 (punctuation) ';': b';'
-  9 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) local: b'local'
-        2 (keywords) temporary: b'temporary'
-        3 (keywords) table: b'table'
-        4 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  10 (punctuation) ';': b';'
-  11 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) global: b'global'
-        2 (keywords) temporary: b'temporary'
-        3 (keywords) table: b'table'
-        4 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  12 (punctuation) ';': b';'
-  13 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) temp: b'temp'
-        2 (keywords) table: b'table'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  14 (punctuation) ';': b';'
-  15 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) local: b'local'
-        2 (keywords) temp: b'temp'
-        3 (keywords) table: b'table'
-        4 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  16 (punctuation) ';': b';'
-  17 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) global: b'global'
-        2 (keywords) temp: b'temp'
-        3 (keywords) table: b'table'
-        4 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  18 (punctuation) ';': b';'
-  19 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) temporary: b'temporary'
-        2 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  20 (punctuation) ';': b';'
-  21 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) local: b'local'
-        2 (keywords) temporary: b'temporary'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  22 (punctuation) ';': b';'
-  23 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) global: b'global'
-        2 (keywords) temporary: b'temporary'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  24 (punctuation) ';': b';'
-  25 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) temp: b'temp'
-        2 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  26 (punctuation) ';': b';'
-  27 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) local: b'local'
-        2 (keywords) temp: b'temp'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  28 (punctuation) ';': b';'
-  29 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) global: b'global'
-        2 (keywords) temp: b'temp'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  30 (punctuation) ';': b';'
-  31 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) unlogged: b'unlogged'
-        2 (keywords) table: b'table'
-        3 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
-  32 (punctuation) ';': b';'
-  33 statement_select
-    0 simple_select
-      0 (keywords) select: b'select'
-      1 (into_clause) select_into_clause
-        0 (keywords) into: b'into'
-        1 (keywords) unlogged: b'unlogged'
-        2 (table_name) name_qualified
-          0 (identifier) column_identifier
-            0 (identifier) identifier: b'a'
+    0 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'sometable'
+    1 (punctuation) ';': b';'
+    2 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'someschema'
+                    1 (indirections) indirection_attribute_access
+                        0 (punctuation) '.': b'.'
+                        1 (attribute) name_attribute
+                            0 (identifier) identifier: b'sometable'
+    3 (punctuation) ';': b';'
+    4 (punctuation) comment: b'-- should allow all indirections'
+    5 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'someschema'
+                    1 (indirections) indirection_attribute_access
+                        0 (punctuation) '.': b'.'
+                        1 (attribute) name_attribute
+                            0 (identifier) identifier: b'sometable'
+                    2 (indirections) indirection_attribute_access
+                        0 (punctuation) '.': b'.'
+                        1 (attribute) name_attribute
+                            0 (identifier) identifier: b'somecolumn'
+                    3 (indirections) indirection_array_access
+                        0 (punctuation) '[': b'['
+                        1 (index) constant_integer: b'123'
+                        2 (punctuation) ']': b']'
+                    4 (indirections) indirection_slice
+                        0 (punctuation) '[': b'['
+                        1 (lower_bound) constant_integer: b'12'
+                        2 (punctuation) ':': b':'
+                        3 (upper_bound) constant_integer: b'34'
+                        4 (punctuation) ']': b']'
+                    5 (indirections) indirection_attribute_access
+                        0 (punctuation) '.': b'.'
+                        1 (attribute) '*': b'*'
+    6 (punctuation) ';': b';'
+    7 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) temporary: b'temporary'
+                2 (keywords) table: b'table'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    8 (punctuation) ';': b';'
+    9 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) local: b'local'
+                2 (keywords) temporary: b'temporary'
+                3 (keywords) table: b'table'
+                4 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    10 (punctuation) ';': b';'
+    11 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) global: b'global'
+                2 (keywords) temporary: b'temporary'
+                3 (keywords) table: b'table'
+                4 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    12 (punctuation) ';': b';'
+    13 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) temp: b'temp'
+                2 (keywords) table: b'table'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    14 (punctuation) ';': b';'
+    15 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) local: b'local'
+                2 (keywords) temp: b'temp'
+                3 (keywords) table: b'table'
+                4 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    16 (punctuation) ';': b';'
+    17 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) global: b'global'
+                2 (keywords) temp: b'temp'
+                3 (keywords) table: b'table'
+                4 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    18 (punctuation) ';': b';'
+    19 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) temporary: b'temporary'
+                2 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    20 (punctuation) ';': b';'
+    21 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) local: b'local'
+                2 (keywords) temporary: b'temporary'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    22 (punctuation) ';': b';'
+    23 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) global: b'global'
+                2 (keywords) temporary: b'temporary'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    24 (punctuation) ';': b';'
+    25 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) temp: b'temp'
+                2 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    26 (punctuation) ';': b';'
+    27 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) local: b'local'
+                2 (keywords) temp: b'temp'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    28 (punctuation) ';': b';'
+    29 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) global: b'global'
+                2 (keywords) temp: b'temp'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    30 (punctuation) ';': b';'
+    31 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) unlogged: b'unlogged'
+                2 (keywords) table: b'table'
+                3 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
+    32 (punctuation) ';': b';'
+    33 statement_select
+        0 simple_select
+            0 (keywords) select: b'select'
+            1 (into_clause) select_into_clause
+                0 (keywords) into: b'into'
+                1 (keywords) unlogged: b'unlogged'
+                2 (table_name) name_qualified
+                    0 (identifier) column_identifier
+                        0 (identifier) identifier: b'a'
 """

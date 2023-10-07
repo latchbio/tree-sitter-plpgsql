@@ -36,7 +36,10 @@ const kw = (name) => f("keywords", kw_base(name));
 module.exports = grammar({
   name: "plpgsql",
 
-  // word: ($) => $.identifier,
+  // prevent parsing a part of the word as a keyword
+  // e.g. `sometable` => kw(`some`) + `table`
+  word: ($) => $.identifier,
+
   externals: ($) => [
     $.dollar_string_start,
     $.dollar_string_content,
@@ -495,6 +498,89 @@ module.exports = grammar({
         kw_base("xmltable")
       ),
 
+    // i.e. reserved_keyword
+    keyword_reserved: ($) =>
+      choice(
+        kw_base("all"),
+        kw_base("analyse"),
+        kw_base("analyze"),
+        kw_base("and"),
+        kw_base("any"),
+        kw_base("array"),
+        kw_base("as"),
+        kw_base("asc"),
+        kw_base("asymmetric"),
+        kw_base("both"),
+        kw_base("case"),
+        kw_base("cast"),
+        kw_base("check"),
+        kw_base("collate"),
+        kw_base("column"),
+        kw_base("constraint"),
+        kw_base("create"),
+        kw_base("current_catalog"),
+        kw_base("current_date"),
+        kw_base("current_role"),
+        kw_base("current_time"),
+        kw_base("current_timestamp"),
+        kw_base("current_user"),
+        kw_base("default"),
+        kw_base("deferrable"),
+        kw_base("desc"),
+        kw_base("distinct"),
+        kw_base("do"),
+        kw_base("else"),
+        kw_base("end"),
+        kw_base("except"),
+        kw_base("false"),
+        kw_base("fetch"),
+        kw_base("for"),
+        kw_base("foreign"),
+        kw_base("from"),
+        kw_base("grant"),
+        kw_base("group"),
+        kw_base("having"),
+        kw_base("in"),
+        kw_base("initially"),
+        kw_base("intersect"),
+        kw_base("into"),
+        kw_base("lateral"),
+        kw_base("leading"),
+        kw_base("limit"),
+        kw_base("localtime"),
+        kw_base("localtimestamp"),
+        kw_base("not"),
+        kw_base("null"),
+        kw_base("offset"),
+        kw_base("on"),
+        kw_base("only"),
+        kw_base("or"),
+        kw_base("order"),
+        kw_base("placing"),
+        kw_base("primary"),
+        kw_base("references"),
+        kw_base("returning"),
+        kw_base("select"),
+        kw_base("session_user"),
+        kw_base("some"),
+        kw_base("symmetric"),
+        kw_base("system_user"),
+        kw_base("table"),
+        kw_base("then"),
+        kw_base("to"),
+        kw_base("trailing"),
+        kw_base("true"),
+        kw_base("union"),
+        kw_base("unique"),
+        kw_base("user"),
+        kw_base("using"),
+        kw_base("variadic"),
+        kw_base("when"),
+        kw_base("where"),
+        kw_base("window"),
+        kw_base("with")
+      ),
+
     // i.e. ColId
     column_identifier: ($) =>
       f(
@@ -539,14 +625,23 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. ColLabel
     column_label: ($) =>
       // todo
       // note: allows all keywords
-      f("identifier", $.identifier),
+      f(
+        "identifier",
+        choice(
+          $.identifier,
+          $.keyword_unreserved,
+          $.keyword_column_identifier,
+          $.keyword_name_type_or_function,
+          $.keyword_reserved
+        )
+      ),
+    // i.e. BareColLabel
     bare_column_label: ($) =>
       // todo
-      // note: allows only certain keywords
-      // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/gram.y#L17544
       f("identifier", $.identifier),
 
     name: ($) => alias($.column_identifier, "name"),
@@ -669,6 +764,13 @@ module.exports = grammar({
             )
           )
         )
+      ),
+
+    // i.e. xml_attribute_el
+    xml_attribute_item: ($) =>
+      s(
+        f("expression", $.expression),
+        opt(kw("as"), f("label", $.column_label))
       ),
 
     // i.e. func_expr_common_subexpr
@@ -796,8 +898,7 @@ module.exports = grammar({
             parens(
               opt(choice(kw("both"), kw("leading"), kw("trailing"))),
               // i.e. trim_list
-              opt(f("characters", $.expression)),
-              opt(kw("from")),
+              opt(opt(f("characters", $.expression)), kw("from")),
               // i.e. expr_list
               // note: this should really only accept up to two expressions
               // but postgres will parse an entire list anyway
@@ -805,7 +906,7 @@ module.exports = grammar({
             )
           ),
           s(
-            kw("null_if"),
+            kw("nullif"),
             parens(
               f("expression", $.expression),
               punct(","),
@@ -821,6 +922,33 @@ module.exports = grammar({
             ),
             // i.e. expr_list
             parcomma(f("expressions", $.expression))
+          ),
+          s(
+            kw("xmlelement"),
+            parens(
+              kw("name"),
+              f("name", $.column_label),
+              opt(
+                punct(","),
+                choice(
+                  s(
+                    // i.e. xml_attributes
+                    s(
+                      kw("xmlattributes"),
+                      // i.e. xml_attribute_list
+                      parcomma(f("attributes", $.xml_attribute_item))
+                    ),
+                    opt(
+                      punct(","),
+                      // i.e. expr_list
+                      comma(f("expressions", $.expression))
+                    )
+                  ),
+                  // i.e. expr_list
+                  comma(f("expressions", $.expression))
+                )
+              )
+            )
           ),
           "todo"
         )
