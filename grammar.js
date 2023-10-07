@@ -1256,8 +1256,27 @@ module.exports = grammar({
     // >>> Expressions
 
     // i.e. Iconst
-    constant_integer: ($) => /\d+/, // todo
-    constant_string: ($) => /'[^']*'/, // todo
+    // todo
+    constant_integer: ($) => /\d+/,
+
+    // i.e. SignedIconst
+    constant_integer_signed: ($) =>
+      s(choice(punct("+"), punct("-")), $.constant_integer),
+
+    // i.e. Sconst
+    // todo
+    constant_string: ($) => /'[^']*'/,
+
+    // i.e. AexprConst
+    // todo
+    constant: ($) =>
+      choice(
+        $.constant_integer,
+        $.constant_string,
+        kw("true"),
+        kw("false"),
+        kw("null")
+      ),
 
     // i.e. c_expr
     // todo
@@ -1565,6 +1584,7 @@ module.exports = grammar({
       ),
 
     // i.e. json_aggregate_func
+    // todo
     expression_function_call_json_aggregate: ($) => s("todo"),
 
     // i.e. func_expr_windowless
@@ -1607,6 +1627,7 @@ module.exports = grammar({
         )
       ),
     frame_clause: ($) =>
+      // todo: inline?
       prec(
         1,
         s(
@@ -1683,11 +1704,12 @@ module.exports = grammar({
         )
       ),
 
-    // >>> SelectStmt
+    // i.e. SelectStmt
+    // i.e. select_no_parens
+    // i.e. select_with_parens
     // todo
     statement_select: ($) => $.simple_select,
 
-    select_all_clause: ($) => kw("all"),
     select_target: ($) =>
       choice(
         s(f("value", $.expression), kw("as"), f("alias", $.column_label)),
@@ -1696,27 +1718,9 @@ module.exports = grammar({
         f("value", "*")
       ),
     select_target_list: ($) => comma(f("targets", $.select_target)),
-    select_into_clause: ($) =>
-      s(
-        kw("into"),
-        choice(
-          s(
-            opt(
-              choice(
-                s(
-                  opt(choice(kw("global"), kw("local"))),
-                  choice(kw("temporary"), kw("temp"))
-                ),
-                kw("unlogged")
-              )
-            ),
-            opt(kw("table")),
-            f("table_name", $.name_qualified)
-          )
-        )
-      ),
 
     // i.e. relation_expr
+    // i.e. extended_relation_expr
     select_from_relation_expression: ($) =>
       choice(
         s(f("name", $.name_qualified), opt(punct("*"))),
@@ -1730,14 +1734,15 @@ module.exports = grammar({
         f("name", $.column_identifier),
         opt(parcomma(f("columns", $.name)))
       ),
+    // i.e. tablesample_clause
     select_from_tablesample_clause: ($) =>
       s(
         kw("tablesample"),
         f("function", $.name_function),
         parcomma(f("arguments", $.expression)),
+        // i.e. opt_repeatable_clause
         opt(kw("repeatable"), parens(f("seed", $.expression)))
       ),
-    // i.e. tablesample_clause
     select_from_table_reference: ($) =>
       s(
         choice(
@@ -1788,25 +1793,52 @@ module.exports = grammar({
         opt(kw("with"), kw("ordinality"))
       ),
 
-    select_from_clause: ($) =>
-      s(
-        kw("from"),
-        comma(
-          // i.e. table_ref
-          f(
-            "tables",
-            choice($.select_from_table_reference, $.select_from_function_table)
-          )
-        )
-      ),
-
+    // i.e. simple_select
+    // todo
     simple_select: ($) =>
       s(
         kw("select"),
-        opt(f("all_clause", $.select_all_clause)),
+        // i.e. opt_all_clause
+        opt(kw("all")),
+        // i.e. opt_target_list
         opt($.select_target_list),
-        opt(f("into_clause", $.select_into_clause)),
-        opt(f("from_clause", $.select_from_clause))
+        // i.e. into_clause
+        opt(
+          kw("into"),
+          // i.e. OptTempTableName
+          opt(
+            choice(
+              s(
+                opt(choice(kw("global"), kw("local"))),
+                choice(kw("temporary"), kw("temp"))
+              ),
+              kw("unlogged")
+            )
+          ),
+          opt(kw("table")),
+          f("table_name", $.name_qualified)
+        ),
+        // i.e. from_clause
+        opt(
+          kw("from"),
+          comma(
+            // i.e. table_ref
+            f(
+              "from",
+              choice(
+                $.select_from_table_reference,
+                $.select_from_function_table
+              )
+            )
+          )
+        ),
+        // i.e. where_clause
+        opt(kw("where"), f("where", $.expression)),
+        //
+        // todo: group_clause
+        //
+        // i.e. having_clause
+        opt(kw("having"), f("having", $.expression))
       ),
   },
 });
