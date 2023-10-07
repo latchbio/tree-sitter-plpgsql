@@ -361,8 +361,9 @@ source_file
             1 (punctuation) '(': b'('
             2 (expression) constant_integer: b'1'
             3 (keywords) as: b'as'
-            4 (type) type_name_numeric
-                0 (keywords) bigint: b'bigint'
+            4 (type) type_name
+                0 (type) type_name_numeric
+                    0 (keywords) bigint: b'bigint'
             5 (punctuation) ')': b')'
     30 (punctuation) ';': b';'
     31 expression_function_call_windowed
@@ -509,8 +510,9 @@ source_file
             1 (punctuation) '(': b'('
             2 (expression) constant_integer: b'1'
             3 (keywords) as: b'as'
-            4 (type) type_name_numeric
-                0 (keywords) bigint: b'bigint'
+            4 (type) type_name
+                0 (type) type_name_numeric
+                    0 (keywords) bigint: b'bigint'
             5 (punctuation) ')': b')'
     60 (punctuation) ';': b';'
     61 expression_function_call_windowed

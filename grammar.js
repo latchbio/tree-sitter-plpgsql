@@ -48,7 +48,6 @@ module.exports = grammar({
   extras: ($) => [/[ \t\n\r\f\v]/, $.comment],
   supertypes: ($) => [
     $.type_name_simple,
-    $.type_name,
 
     $.operator,
     $.operator_generic_possibly_qualified,
@@ -1230,9 +1229,29 @@ module.exports = grammar({
         $.type_name_character
       ),
 
-    // i.e. Typename
+    // i.e. ConstTypename
     // todo
-    type_name: ($) => choice($.type_name_simple),
+    type_name_constant: ($) =>
+      choice($.type_name_numeric, $.type_name_bit, $.type_name_character),
+
+    // i.e. Typename
+    type_name: ($) =>
+      choice(
+        s(
+          opt(kw("setof")),
+          f("type", $.type_name_simple),
+          // i.e. opt_array_bounds
+          repeat(
+            s(punct("["), f("lengths", opt($.constant_integer)), punct("]"))
+          )
+        ),
+        s(
+          opt(kw("setof")),
+          f("type", $.type_name_simple),
+          kw("array"),
+          opt(punct("["), f("length", $.constant_integer), punct("]"))
+        )
+      ),
 
     // >>> Expressions
 
