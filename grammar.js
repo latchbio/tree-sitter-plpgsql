@@ -13,6 +13,7 @@ const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
 const kw_base = (name) =>
+  // todo(maximsmol): alias here does not work
   alias(
     token(
       prec(
@@ -29,6 +30,7 @@ const kw_base = (name) =>
     ),
     name
   );
+// const kw_base = (name) => name;
 const kw = (name) => f("keywords", kw_base(name));
 
 module.exports = grammar({
@@ -49,6 +51,7 @@ module.exports = grammar({
     $.indirection_item,
     $.expression,
     $.expression_restricted,
+    $.expression_x_restricted,
     $.expression_function_call,
   ],
   inline: ($) => [
@@ -70,7 +73,11 @@ module.exports = grammar({
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/backend/parser/scan.l
     // https://github.com/postgres/postgres/blob/b0ec61c9c27fb932ae6524f92a18e0d1fadbc144/src/include/parser/kwlist.h
 
-    source_file: ($) => opt(sep($.statement_select, ";")),
+    source_file: ($) =>
+      choice(
+        s("-- tree-sitter-debug: expressions", sep($.expression, ";")),
+        opt(sep($.statement_select, ";"))
+      ),
 
     comment: ($) => /--[^\n\r]*|\/\*([^*]|\*[^/])*\*+\//,
 
@@ -614,11 +621,22 @@ module.exports = grammar({
     constant_integer: ($) => /\d+/, // todo
     constant_string: ($) => /'[^']*'/, // todo
 
+    // i.e. c_expr
+    // todo
+    expression_x_restricted: ($) =>
+      choice(
+        $.expression_function_call_windowed,
+        $.constant_integer,
+        $.constant_string
+      ),
+
     // i.e. b_expr
-    expression_restricted: ($) => choice($.constant_integer, $.constant_string),
+    // todo
+    expression_restricted: ($) => choice($.expression_x_restricted, "todo"),
 
     // i.e. a_expr
-    expression: ($) => $.expression_restricted,
+    // todo
+    expression: ($) => choice($.expression_x_restricted, "todo"),
 
     // i.e. func_arg_expr
     function_argument: ($) =>
@@ -626,6 +644,7 @@ module.exports = grammar({
         opt(f("parameter", $.name_parameter), choice(punct(":="), punct("=>"))),
         f("expression", $.expression)
       ),
+
     // i.e. func_application
     expression_function_call_generic: ($) =>
       s(
@@ -817,10 +836,117 @@ module.exports = grammar({
         $.expression_function_call_special,
         $.expression_function_call_json_aggregate
       ),
+
+    window_exclusion_clause: ($) =>
+      s(
+        kw("exclude"),
+        choice(
+          s(kw("current"), kw("row")),
+          s(kw("group")),
+          s(kw("ties")),
+          s(kw("no"), kw("others"))
+        )
+      ),
+    // i.e. frame_bound
+    frame_bound: ($) =>
+      choice(
+        s(kw("unbounded"), choice(kw("preceding"), kw("following"))),
+        s(kw("current"), kw("row")),
+        s(
+          f("expression", $.expression),
+          choice(kw("preceding"), kw("following"))
+        )
+      ),
+    // i.e. frame_extent
+    frame_extent: ($) =>
+      choice(
+        $.frame_bound,
+        s(
+          kw("between"),
+          f("lower_bound", $.frame_bound),
+          kw("and"),
+          f("upper_bound", $.frame_bound)
+        )
+      ),
+    frame_clause: ($) =>
+      prec(
+        1,
+        s(
+          choice(kw("range"), kw("rows"), kw("groups")),
+          f("extent", $.frame_extent),
+          opt(
+            // i.e. opt_window_exclusion_clause
+            f("exclude", $.window_exclusion_clause)
+          )
+        )
+      ),
+    // i.e. window_specification
+    window_specification: ($) =>
+      parens(
+        opt(
+          // i.e. opt_existing_window_name
+          f("existing_window_name", $.column_identifier)
+        ),
+        opt(
+          // i.e. opt_partition_clause
+          kw("partition"),
+          kw("by"),
+          // i.e. expr_list
+          parcomma(f("partition_by_expressions", $.expression))
+        ),
+        opt(
+          // i.e. opt_sort_clause
+          f("sort_clause", $.sort_clause)
+        ),
+        opt(
+          // i.e. opt_frame_clause
+          $.frame_clause
+        )
+      ),
+
+    // i.e. filter_clause
+    filter_clause: ($) =>
+      s(
+        kw("filter"),
+        parens(kw("where"), f("filter_expression", $.expression))
+      ),
+
+    // i.e. over_clause
+    over_clause: ($) =>
+      s(
+        kw("over"),
+        choice(
+          f("over_window", $.window_specification),
+          f("over_column", $.column_identifier)
+        )
+      ),
+
     // i.e. func_expr
-    expression_function_call_windowed: ($) => s("todo"),
+    expression_function_call_windowed: ($) =>
+      prec.left(
+        choice(
+          s(
+            $.expression_function_call_generic,
+            opt(
+              // i.e. within_group_clause
+              kw("within"),
+              kw("group"),
+              parens(f("within_group", $.sort_clause))
+            ),
+            opt(f("filter_clause", $.filter_clause)),
+            opt(f("over_clause", $.over_clause))
+          ),
+          s(
+            $.expression_function_call_json_aggregate,
+            opt(f("filter_clause", $.filter_clause)),
+            opt(f("over_clause", $.over_clause))
+          ),
+          $.expression_function_call_special
+        )
+      ),
 
     // >>> SelectStmt
+    // todo
     statement_select: ($) => $.simple_select,
 
     select_all_clause: ($) => kw("all"),
