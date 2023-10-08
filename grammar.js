@@ -13,7 +13,6 @@ const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
 const kw_base = (name) =>
-  // todo(maximsmol): alias here does not work
   alias(
     token(
       prec(
@@ -30,7 +29,9 @@ const kw_base = (name) =>
     ),
     name
   );
-// const kw_base = (name) => prec(1, name);
+
+// debugging version that shows readable tokens in conflict reports
+// const kw_base = (name) => alias(token(prec(1, name)), name);
 const kw = (name) => f("keywords", kw_base(name));
 
 module.exports = grammar({
@@ -1321,7 +1322,7 @@ module.exports = grammar({
                 opt(f("sort_clause", $.sort_clause))
               ),
               s(
-                $.function_argument_list,
+                opt($.function_argument_list, ","),
                 kw("variadic"),
                 f("variadic_argument", $.function_argument),
                 opt(f("sort_clause", $.sort_clause))
@@ -1625,7 +1626,7 @@ module.exports = grammar({
     frame_clause: ($) =>
       // todo: inline?
       prec(
-        1,
+        2,
         s(
           choice(kw("range"), kw("rows"), kw("groups")),
           f("extent", $.frame_extent),
@@ -1797,9 +1798,9 @@ module.exports = grammar({
           f("expression", $.expression),
           s(punct("("), punct(")")),
           // i.e. cube_clause
-          prec(1, s(kw("cube"), parens($.expression_list))), // todo: rename expressions
+          prec(2, s(kw("cube"), parens($.expression_list))), // todo: rename expressions
           // i.e. rollup_clause
-          prec(1, s(kw("rollup"), parens($.expression_list))), // todo: rename expressions
+          prec(2, s(kw("rollup"), parens($.expression_list))), // todo: rename expressions
           // i.e. grouping_sets_clause
           s(
             kw("grouping"),
