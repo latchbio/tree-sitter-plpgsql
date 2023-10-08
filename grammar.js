@@ -1810,6 +1810,10 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. window_definition
+    // window_definition: ($) =>
+    //   s($.column_identifier, kw("as"), $.window_specification),
+
     // i.e. simple_select
     // todo
     simple_select: ($) =>
@@ -1861,6 +1865,13 @@ module.exports = grammar({
         ),
         // i.e. having_clause
         opt(kw("having"), f("having", $.expression))
+        // i.e. window_clause
+        // todo: this makes the parser build forever
+        // opt(
+        //   kw("window"),
+        //   // i.e. window_definition_list
+        //   comma(f("window_definitions", $.window_definition))
+        // )
       ),
   },
 });
