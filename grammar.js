@@ -30,7 +30,7 @@ const kw_base = (name) =>
     ),
     name
   );
-// const kw_base = (name) => name;
+// const kw_base = (name) => prec(1, name);
 const kw = (name) => f("keywords", kw_base(name));
 
 module.exports = grammar({
@@ -1484,7 +1484,7 @@ module.exports = grammar({
               kw("least"),
               kw("xmlconcat")
             ),
-            $.expression_list
+            parens($.expression_list)
           ),
           s(
             kw("xmlelement"),
@@ -1789,6 +1789,26 @@ module.exports = grammar({
         opt(kw("with"), kw("ordinality"))
       ),
 
+    // i.e. group_by_list
+    select_group_by_list: ($) =>
+      comma(
+        // i.e. group_by_item
+        choice(
+          f("expression", $.expression),
+          s(punct("("), punct(")")),
+          // i.e. cube_clause
+          prec(1, s(kw("cube"), parens($.expression_list))), // todo: rename expressions
+          // i.e. rollup_clause
+          prec(1, s(kw("rollup"), parens($.expression_list))), // todo: rename expressions
+          // i.e. grouping_sets_clause
+          s(
+            kw("grouping"),
+            kw("sets"),
+            parens(f("grouping_sets", $.select_group_by_list))
+          )
+        )
+      ),
+
     // i.e. simple_select
     // todo
     simple_select: ($) =>
@@ -1830,9 +1850,14 @@ module.exports = grammar({
         ),
         // i.e. where_clause
         opt(kw("where"), f("where", $.expression)),
-        //
-        // todo: group_clause
-        //
+        // i.e. group_clause
+        opt(
+          kw("group"),
+          kw("by"),
+          // i.e. set_quantifier
+          opt(choice(kw("all"), kw("distinct"))),
+          f("group_by", $.select_group_by_list)
+        ),
         // i.e. having_clause
         opt(kw("having"), f("having", $.expression))
       ),
