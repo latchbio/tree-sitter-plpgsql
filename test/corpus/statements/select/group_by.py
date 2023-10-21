@@ -146,7 +146,4 @@ source_file
                 3 (punctuation) ',': b','
                 4 (expression) constant_integer: b'3'
     5 (punctuation) ';': b';'
-    6 statement_select
-        0 simple_select
-            0 (keywords) select: b''
 """

@@ -84,12 +84,9 @@ module.exports = grammar({
 
     source_file: ($) =>
       choice(
-        s(
-          "-- tree-sitter-debug: expressions",
-          sep($.expression, repeat1(punct(";")))
-        ),
-        s("-- tree-sitter-debug: types", sep($.type_name, repeat1(punct(";")))),
-        opt(sep($.statement, repeat1(punct(";"))))
+        s("-- tree-sitter-debug: expressions", sep(opt($.expression), ";")),
+        s("-- tree-sitter-debug: types", sep(opt($.type_name), ";")),
+        opt(sep(opt($.statement), ";"))
       ),
 
     statement: ($) =>
