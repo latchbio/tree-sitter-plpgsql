@@ -1811,67 +1811,89 @@ module.exports = grammar({
       ),
 
     // i.e. window_definition
-    // window_definition: ($) =>
-    //   s($.column_identifier, kw("as"), $.window_specification),
+    window_definition: ($) =>
+      s($.column_identifier, kw("as"), $.window_specification),
+
+    _into_clause: ($) =>
+      s(
+        opt(
+          choice(
+            s(
+              opt(choice(kw("global"), kw("local"))),
+              choice(kw("temporary"), kw("temp"))
+            ),
+            kw("unlogged")
+          )
+        ),
+        opt(kw("table")),
+        f("table_name", $.name_qualified)
+      ),
+
+    _from_clause: ($) =>
+      comma(
+        // i.e. table_ref
+        f(
+          "from",
+          choice($.select_from_table_reference, $.select_from_function_table)
+        )
+      ),
+
+    _distinct_clause: ($) =>
+      s(
+        opt(
+          kw("on"),
+          // todo: rename the expressions
+          parens($.expression_list)
+        ),
+        // i.e. target_list
+        f("targets", $.select_target_list)
+      ),
+
+    _group_by: ($) =>
+      s(
+        // i.e. set_quantifier
+        opt(choice(kw("all"), kw("distinct"))),
+        f("group_by", $.select_group_by_list)
+      ),
 
     // i.e. simple_select
     // todo
     simple_select: ($) =>
       s(
         kw("select"),
-        // i.e. opt_all_clause
-        opt(kw("all")),
-        // i.e. opt_target_list
-        opt($.select_target_list),
+        choice(
+          s(
+            // i.e. opt_all_clause
+            opt(kw("all")),
+            // i.e. opt_target_list
+            opt(f("targets", $.select_target_list))
+          ),
+          s(
+            // i.e. distinct_clause
+            kw("distinct"),
+            $._distinct_clause
+          )
+        ),
         // i.e. into_clause
         opt(
           kw("into"),
           // i.e. OptTempTableName
-          opt(
-            choice(
-              s(
-                opt(choice(kw("global"), kw("local"))),
-                choice(kw("temporary"), kw("temp"))
-              ),
-              kw("unlogged")
-            )
-          ),
-          opt(kw("table")),
-          f("table_name", $.name_qualified)
+          $._into_clause
         ),
         // i.e. from_clause
-        opt(
-          kw("from"),
-          comma(
-            // i.e. table_ref
-            f(
-              "from",
-              choice(
-                $.select_from_table_reference,
-                $.select_from_function_table
-              )
-            )
-          )
-        ),
+        opt(kw("from"), $._from_clause),
         // i.e. where_clause
         opt(kw("where"), f("where", $.expression)),
         // i.e. group_clause
-        opt(
-          kw("group"),
-          kw("by"),
-          // i.e. set_quantifier
-          opt(choice(kw("all"), kw("distinct"))),
-          f("group_by", $.select_group_by_list)
-        ),
+        opt(kw("group"), kw("by"), $._group_by),
         // i.e. having_clause
-        opt(kw("having"), f("having", $.expression))
+        opt(kw("having"), f("having", $.expression)),
         // i.e. window_clause
-        // todo: this makes the parser build forever
-        // opt(
-        //   kw("window"),
-        //   // i.e. window_definition_list
-        //   comma(f("window_definitions", $.window_definition))
-        // )
+        opt(
+          kw("window"),
+          // i.e. window_definition_list
+          comma(f("window_definitions", $.window_definition))
+        )
       ),
   },
 });
