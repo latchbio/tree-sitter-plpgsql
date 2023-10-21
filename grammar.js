@@ -1643,16 +1643,19 @@ module.exports = grammar({
           // i.e. opt_existing_window_name
           f("existing_window_name", $.column_identifier)
         ),
-        opt(
-          // i.e. opt_partition_clause
-          kw("partition"),
-          kw("by"),
-          // i.e. expr_list
-          parcomma(f("partition_by_expressions", $.expression))
+        prec(
+          2,
+          opt(
+            // i.e. opt_partition_clause
+            kw("partition"),
+            kw("by"),
+            // i.e. expr_list
+            comma(f("partition_by_expressions", $.expression))
+          )
         ),
         opt(
           // i.e. opt_sort_clause
-          f("sort_clause", $.sort_clause)
+          $.sort_clause
         ),
         opt(
           // i.e. opt_frame_clause
@@ -1812,48 +1815,10 @@ module.exports = grammar({
 
     // i.e. window_definition
     window_definition: ($) =>
-      s($.column_identifier, kw("as"), $.window_specification),
-
-    _into_clause: ($) =>
       s(
-        opt(
-          choice(
-            s(
-              opt(choice(kw("global"), kw("local"))),
-              choice(kw("temporary"), kw("temp"))
-            ),
-            kw("unlogged")
-          )
-        ),
-        opt(kw("table")),
-        f("table_name", $.name_qualified)
-      ),
-
-    _from_clause: ($) =>
-      comma(
-        // i.e. table_ref
-        f(
-          "from",
-          choice($.select_from_table_reference, $.select_from_function_table)
-        )
-      ),
-
-    _distinct_clause: ($) =>
-      s(
-        opt(
-          kw("on"),
-          // todo: rename the expressions
-          parens($.expression_list)
-        ),
-        // i.e. target_list
-        f("targets", $.select_target_list)
-      ),
-
-    _group_by: ($) =>
-      s(
-        // i.e. set_quantifier
-        opt(choice(kw("all"), kw("distinct"))),
-        f("group_by", $.select_group_by_list)
+        f("name", $.column_identifier),
+        kw("as"),
+        f("specification", $.window_specification)
       ),
 
     // i.e. simple_select
@@ -1894,6 +1859,51 @@ module.exports = grammar({
           // i.e. window_definition_list
           comma(f("window_definitions", $.window_definition))
         )
+      ),
+
+    // note: these are split out to keep the number of productions for
+    // simple_select low. otherwise the parser literally never finishes
+    // generating because of the combinatorial explosion
+    _into_clause: ($) =>
+      s(
+        opt(
+          choice(
+            s(
+              opt(choice(kw("global"), kw("local"))),
+              choice(kw("temporary"), kw("temp"))
+            ),
+            kw("unlogged")
+          )
+        ),
+        opt(kw("table")),
+        f("table_name", $.name_qualified)
+      ),
+
+    _from_clause: ($) =>
+      comma(
+        // i.e. table_ref
+        f(
+          "from",
+          choice($.select_from_table_reference, $.select_from_function_table)
+        )
+      ),
+
+    _distinct_clause: ($) =>
+      s(
+        opt(
+          kw("on"),
+          // todo: rename the expressions
+          parens($.expression_list)
+        ),
+        // i.e. target_list
+        f("targets", $.select_target_list)
+      ),
+
+    _group_by: ($) =>
+      s(
+        // i.e. set_quantifier
+        opt(choice(kw("all"), kw("distinct"))),
+        f("group_by", $.select_group_by_list)
       ),
   },
 });
