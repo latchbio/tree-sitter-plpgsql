@@ -1824,6 +1824,12 @@ module.exports = grammar({
     // i.e. simple_select
     // todo
     simple_select: ($) =>
+      choice($._select_regular, $._select_values, $._select_table),
+
+    // note: these are split out to keep the number of productions for
+    // simple_select low. otherwise the parser literally never finishes
+    // generating because of the combinatorial explosion
+    _select_regular: ($) =>
       s(
         kw("select"),
         choice(
@@ -1861,9 +1867,6 @@ module.exports = grammar({
         )
       ),
 
-    // note: these are split out to keep the number of productions for
-    // simple_select low. otherwise the parser literally never finishes
-    // generating because of the combinatorial explosion
     _into_clause: ($) =>
       s(
         opt(
@@ -1905,5 +1908,16 @@ module.exports = grammar({
         opt(choice(kw("all"), kw("distinct"))),
         f("group_by", $.select_group_by_list)
       ),
+
+    // i.e. values_clause
+    _select_values: ($) =>
+      s(kw("values"), comma(parens(f("values_entries", $.values_entry)))),
+
+    values_entry: ($) =>
+      // i.e. expr_list
+      comma(f("values", $.expression)),
+
+    _select_table: ($) =>
+      s(kw("table"), f("relation", $.select_from_relation_expression)),
   },
 });
