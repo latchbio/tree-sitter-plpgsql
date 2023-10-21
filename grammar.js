@@ -48,6 +48,8 @@ module.exports = grammar({
   ],
   extras: ($) => [/[ \t\n\r\f\v]/, $.comment],
   supertypes: ($) => [
+    $.statement,
+
     $.type_name_simple,
 
     $.operator,
@@ -82,9 +84,19 @@ module.exports = grammar({
 
     source_file: ($) =>
       choice(
-        s("-- tree-sitter-debug: expressions", sep($.expression, ";")),
-        s("-- tree-sitter-debug: types", sep($.type_name, ";")),
-        opt(sep($.statement_select, ";"))
+        s(
+          "-- tree-sitter-debug: expressions",
+          sep($.expression, repeat1(punct(";")))
+        ),
+        s("-- tree-sitter-debug: types", sep($.type_name, repeat1(punct(";")))),
+        opt(sep($.statement, repeat1(punct(";"))))
+      ),
+
+    statement: ($) =>
+      choice(
+        $.statement_alter_event_trigger,
+        $.statement_alter_collation,
+        $.statement_select
       ),
 
     comment: ($) => /--[^\n\r]*|\/\*([^*]|\*[^/])*\*+\//,
@@ -1025,8 +1037,13 @@ module.exports = grammar({
         kw_base("zone")
       ),
 
+    // i.e. name
+    name: ($) => $._column_identifier,
+
     // i.e. ColId
-    column_identifier: ($) =>
+    column_identifier: ($) => $._column_identifier,
+
+    _column_identifier: ($) =>
       f(
         "identifier",
         choice($.identifier, $.keyword_unreserved, $.keyword_column_identifier)
@@ -1704,7 +1721,32 @@ module.exports = grammar({
         )
       ),
 
-    // i.e. SelectStmt
+    // >>> i.e. AlterEventTrigStmt
+    // todo: merge variants of rename, set owner
+    statement_alter_event_trigger: ($) =>
+      s(
+        kw("alter"),
+        kw("event"),
+        kw("trigger"),
+        f("name", $.name),
+        choice(
+          s(kw("enable"), opt(choice(kw("replica"), kw("always")))),
+          kw("disable")
+        )
+      ),
+
+    // >>> i.e. AlterCollationStmt
+    // todo: merge variants of rename, set owner, set schema
+    statement_alter_collation: ($) =>
+      s(
+        kw("alter"),
+        kw("collation"),
+        f("name", $.name_namespaced),
+        kw("refresh"),
+        kw("version")
+      ),
+
+    // >>> i.e. SelectStmt
     // i.e. select_no_parens
     // i.e. select_with_parens
     // todo
