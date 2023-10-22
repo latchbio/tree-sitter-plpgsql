@@ -12,7 +12,7 @@ const parcomma = (...rule) => parens(comma(...rule));
 const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
-const kw_base = (name) =>
+let kw_base = (name) =>
   alias(
     token(
       prec(
@@ -31,7 +31,7 @@ const kw_base = (name) =>
   );
 
 // debugging version that shows readable tokens in conflict reports
-// const kw_base = (name) => alias(token(prec(1, name)), name);
+// kw_base = (name) => alias(token(prec(1, name)), name);
 const kw = (name) =>
   s(...name.split(" ").map((x) => f("keywords", kw_base(x))));
 
@@ -97,6 +97,38 @@ module.exports = grammar({
         $.statement_alter_database,
         $.statement_alter_default_privileges,
         $.statement_alter_domain,
+        // $.statement_alter_enum,
+        // $.statement_alter_extension,
+        // $.statement_alter_extension_contents,
+        // $.statement_alter_foreign_data_wrapper,
+        // $.statement_alter_foregin_server,
+        // $.statement_alter_function,
+        // $.statement_alter_group,
+        // $.statement_alter_object,
+        // $.statement_alter_owner,
+        // $.statement_alter_operator,
+        // $.statement_alter_type,
+        // $.statement_alter_policy,
+        // $.statement_alter_sequence,
+        // $.statement_alter_system,
+        // $.statement_alter_table,
+        // $.statement_alter_table_space,
+        // $.statement_alter_composite_type,
+        // $.statement_alter_publication,
+        // $.statement_alter_role_set,
+        // $.statement_alter_role,
+        // $.statement_alter_subscription,
+        // $.statement_alter_stats,
+        // $.statement_alter_text_search,
+        // $.statement_alter_user_mapping,
+        $.statement_analyze,
+        // $.statement_call,
+        // $.statement_checkpoint,
+        // $.statement_close_portal,
+        // $.statement_cluster,
+        // $.statement_comment,
+        // $.statement_constraint,
+        // $.statement_copy,
         $.statement_select
       ),
 
@@ -1962,6 +1994,16 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. opt_boolean_or_string
+    _setting_value_boolean_or_string: ($) =>
+      choice(
+        kw("true"),
+        kw("false"),
+        kw("on"),
+        // kw("off"), // todo
+        $._name_not_fully_reserved_or_constant_string
+      ),
+
     // >>> i.e. AlterEventTrigStmt
     // todo: merge variants of rename, set owner
     statement_alter_event_trigger: ($) =>
@@ -2008,15 +2050,7 @@ module.exports = grammar({
 
     // i.e. var_value
     set_property_value: ($) =>
-      choice(
-        $._constant_numeric,
-        // i.e. opt_boolean_or_string
-        kw("true"),
-        kw("false"),
-        kw("on"),
-        // kw("off"), // todo
-        $._name_not_fully_reserved_or_constant_string
-      ),
+      choice($._constant_numeric, $._setting_value_boolean_or_string),
 
     // >>> i.e. AlterDatabaseSetStmt
     statement_alter_database: ($) =>
@@ -2227,6 +2261,63 @@ module.exports = grammar({
           s(kw("validate constraint"), f("constraint", $.name))
         )
       ),
+
+    // >>> i.e. AnalyzeStmt
+    statement_analyze: ($) =>
+      s(
+        $._analyze_keyword,
+        // i.e. opt_verbose
+        choice(
+          opt(kw("verbose")),
+          parens(
+            // i.e. utility_option_list
+            comma(f("options", $.analyze_option))
+          )
+        ),
+        // i.e. opt_vacuum_relation_list
+        opt(
+          // i.e. vacuum_relation_list
+          comma(f("relations", $.analyze_relation_reference))
+        )
+      ),
+
+    // i.e. vacuum_relation
+    analyze_relation_reference: ($) =>
+      s(
+        f("name", $.name_qualified),
+        // i.e. opt_name_list
+        opt(
+          parens(
+            // i.e. name_list
+            comma(f("columns", $.name))
+          )
+        )
+      ),
+
+    // i.e. utility_option_elem
+    analyze_option: ($) =>
+      s(
+        // i.e. utility_option_name
+        f(
+          "name",
+          choice(
+            $.name_not_fully_reserved,
+            $._analyze_keyword
+            // todo(maximsmol): causes a conflict for some reason
+            // kw("format")
+          )
+        ),
+        // i.e. utility_option_arg
+        opt(
+          f(
+            "value",
+            choice($._setting_value_boolean_or_string, $._constant_numeric)
+          )
+        )
+      ),
+
+    // i.e. analyze_keyword
+    _analyze_keyword: ($) => choice(kw("analyze"), kw("analyse")),
 
     // >>> i.e. SelectStmt
     // i.e. select_no_parens
