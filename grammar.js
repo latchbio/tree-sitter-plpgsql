@@ -95,6 +95,7 @@ module.exports = grammar({
         $.statement_alter_event_trigger,
         $.statement_alter_collation,
         $.statement_alter_database,
+        $.statement_alter_default_privileges,
         $.statement_select
       ),
 
@@ -1850,7 +1851,7 @@ module.exports = grammar({
         $._name_not_fully_reserved_or_constant_string
       ),
 
-    // i.e. AlterDatabaseSetStmt
+    // >>> i.e. AlterDatabaseSetStmt
     statement_alter_database: ($) =>
       s(
         kw("alter"),
@@ -1924,6 +1925,114 @@ module.exports = grammar({
               kw("transaction isolation level"),
               kw("session authorization")
             )
+          )
+        )
+      ),
+
+    // i.e. RoleSpec
+    role_specification: ($) =>
+      choice(
+        f("role", $.name_not_fully_reserved),
+        kw("current_role"),
+        kw("current_user"),
+        kw("session_user")
+      ),
+
+    // i.e. defacl_privilege_target
+    _default_privileges_target: ($) =>
+      choice(
+        kw("tables"),
+        kw("functions"),
+        kw("routines"),
+        kw("sequences"),
+        kw("types"),
+        kw("schemas")
+      ),
+
+    // i.e. grantee_list
+    _default_privileges_grantee_list: ($) =>
+      comma(opt(kw("group")), f("grantees", $.role_specification)),
+
+    // i.e. privilege
+    privilege_specification: ($) =>
+      choice(
+        kw("alter system"),
+        s(
+          choice(
+            kw("select"),
+            kw("references"),
+            kw("create"),
+            s(f("action", $.column_identifier))
+          ),
+          // i.e. opt_column_list
+          opt(
+            parens(
+              // i.e. columnList
+              comma(f("columns", $.column_identifier))
+            )
+          )
+        )
+      ),
+
+    // i.e. privileges
+    privileges_specification: ($) =>
+      choice(
+        // i.e. privilege_list
+        comma(f("privileges", $.privilege_specification)),
+        s(
+          kw("all"),
+          opt(kw("privileges")),
+          opt(
+            parens(
+              // i.e. columnList
+              comma(f("columns", $.column_identifier))
+            )
+          )
+        )
+      ),
+
+    // >>> i.e. AlterDefaultPrivilegesStmt
+    statement_alter_default_privileges: ($) =>
+      s(
+        kw("alter default privileges"),
+        // i.e. DefACLOptionList
+        repeat(
+          choice(
+            s(
+              kw("in schema"),
+              // i.e. name_list
+              comma(f("schemas", $.name))
+            ),
+            s(
+              kw("for"),
+              choice(kw("role"), kw("user")),
+              // i.e. role_list
+              comma(f("roles", $.role_specification))
+            )
+          )
+        ),
+        // i.e. DefACLAction
+        choice(
+          s(
+            kw("grant"),
+            f("privileges", $.privileges_specification),
+            kw("on"),
+            $._default_privileges_target,
+            kw("to"),
+            $._default_privileges_grantee_list,
+            // i.e. opt_grant_grant_option
+            opt(kw("with grant option"))
+          ),
+          s(
+            kw("revoke"),
+            opt(kw("grant option for")),
+            f("privileges", $.privileges_specification),
+            kw("on"),
+            $._default_privileges_target,
+            kw("to"),
+            $._default_privileges_grantee_list,
+            // i.e. opt_drop_behavior
+            opt(choice(kw("cascade"), kw("restrict")))
           )
         )
       ),
