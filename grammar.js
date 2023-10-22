@@ -32,7 +32,8 @@ const kw_base = (name) =>
 
 // debugging version that shows readable tokens in conflict reports
 // const kw_base = (name) => alias(token(prec(1, name)), name);
-const kw = (name) => f("keywords", kw_base(name));
+const kw = (name) =>
+  s(...name.split(" ").map((x) => f("keywords", kw_base(x))));
 
 module.exports = grammar({
   name: "plpgsql",
@@ -93,6 +94,7 @@ module.exports = grammar({
       choice(
         $.statement_alter_event_trigger,
         $.statement_alter_collation,
+        $.statement_alter_database,
         $.statement_select
       ),
 
@@ -1034,16 +1036,20 @@ module.exports = grammar({
         kw_base("zone")
       ),
 
-    // i.e. name
-    name: ($) => $._column_identifier,
-
     // i.e. ColId
-    column_identifier: ($) => $._column_identifier,
-
-    _column_identifier: ($) =>
+    column_identifier: ($) =>
       f(
         "identifier",
         choice($.identifier, $.keyword_unreserved, $.keyword_column_identifier)
+      ),
+
+    // i.e. NonReservedWord
+    name_not_fully_reserved: ($) =>
+      choice(
+        $.identifier,
+        $.keyword_unreserved,
+        $.keyword_column_identifier,
+        $.keyword_name_type_or_function
       ),
 
     // i.e. type_func_name_keyword
@@ -1101,6 +1107,7 @@ module.exports = grammar({
     bare_column_label: ($) =>
       f("identifier", choice($.identifier, $.keyword_bare_label)),
 
+    // i.e. name
     name: ($) => alias($.column_identifier, "name"),
     // i.e. attr_name
     name_attribute: ($) => alias($.column_label, "name_attribute"),
@@ -1114,6 +1121,10 @@ module.exports = grammar({
     // note: the original is actually an alias to name_function but a note
     // explains that they would make it ColId if conflicts could be resolved
     name_parameter: ($) => alias($.column_identifier, "name_parameter"),
+
+    // i.e. NonReservedWord_or_Sconst
+    _name_not_fully_reserved_or_constant_string: ($) =>
+      choice($.name_not_fully_reserved, $.constant_string),
 
     // i.e. attrs
     attribute_access: ($) =>
@@ -1151,6 +1162,15 @@ module.exports = grammar({
       s(
         f("name", $.column_identifier),
         opt(punct("."), sep(f("attributes", $.name_attribute), "."))
+      ),
+
+    // i.e. var_name
+    // like name_namespaced but accepts `column_identifier` and not `column_label`
+    // for the attribute names
+    name_variable: ($) =>
+      s(
+        f("name", $.column_identifier),
+        opt(punct("."), sep(f("attributes", $.column_identifier), "."))
       ),
 
     // i.e. sortby
@@ -1273,9 +1293,13 @@ module.exports = grammar({
     // todo
     constant_integer: ($) => /\d+/,
 
+    // i.e. FCONST
+    // todo
+    constant_float: ($) => /\d+\.\d+/,
+
     // i.e. SignedIconst
     constant_integer_signed: ($) =>
-      s(choice(punct("+"), punct("-")), $.constant_integer),
+      s(opt(choice(punct("+"), punct("-"))), $.constant_integer),
 
     // i.e. Sconst
     // todo
@@ -1286,10 +1310,19 @@ module.exports = grammar({
     constant: ($) =>
       choice(
         $.constant_integer,
+        $.constant_float,
         $.constant_string,
+        // i.e. BCONST
         kw("true"),
         kw("false"),
         kw("null")
+      ),
+
+    // i.e. NumericOnly
+    _constant_numeric: ($) =>
+      choice(
+        s(opt(choice(punct("+"), punct("-"))), $.constant_float),
+        $.constant_integer_signed
       ),
 
     // i.e. c_expr
@@ -1718,6 +1751,49 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. interval_second
+    _seconds_precision: ($) =>
+      s(kw("second"), opt(parens(f("seconds_precision", $.constant_integer)))),
+
+    // i.e. zone_value
+    // todo: test properly
+    time_zone: ($) =>
+      choice(
+        f("name", $.constant_string),
+        f("name", $.identifier),
+        s(
+          // i.e. ConstInterval
+          kw("interval"),
+          choice(
+            s(
+              f("offset", $.constant_string),
+              // i.e. opt_interval
+              opt(
+                choice(
+                  kw("year"),
+                  kw("month"),
+                  kw("day"),
+                  kw("hour"),
+                  kw("minute"),
+                  $._seconds_precision,
+                  kw("year to month"),
+                  kw("day to hour"),
+                  kw("day to minute"),
+                  s(kw("day to"), $._seconds_precision),
+                  kw("hour to minute"),
+                  s(kw("hour to"), $._seconds_precision),
+                  s(kw("minute to"), $._seconds_precision)
+                )
+              )
+            ),
+            s(parens($.constant_integer), $.constant_string)
+          )
+        ),
+        f("utc_offset", $._constant_numeric),
+        kw("default"),
+        kw("local")
+      ),
+
     // >>> i.e. AlterEventTrigStmt
     // todo: merge variants of rename, set owner
     statement_alter_event_trigger: ($) =>
@@ -1726,6 +1802,7 @@ module.exports = grammar({
         kw("event"),
         kw("trigger"),
         f("name", $.name),
+        // i.e. enable_trigger
         choice(
           s(kw("enable"), opt(choice(kw("replica"), kw("always")))),
           kw("disable")
@@ -1741,6 +1818,114 @@ module.exports = grammar({
         f("name", $.name_namespaced),
         kw("refresh"),
         kw("version")
+      ),
+
+    // i.e. transaction_mode_item
+    transaction_mode: ($) =>
+      choice(
+        s(
+          kw("isolation level"),
+          // i.e. iso_level
+          choice(
+            kw("read uncommitted"),
+            kw("read committed"),
+            kw("repeatable read"),
+            kw("serializable")
+          )
+        ),
+        kw("read only"),
+        kw("read write"),
+        s(opt(kw("not")), kw("deferrable"))
+      ),
+
+    // i.e. var_value
+    set_property_value: ($) =>
+      choice(
+        $._constant_numeric,
+        // i.e. opt_boolean_or_string
+        kw("true"),
+        kw("false"),
+        kw("on"),
+        // kw("off"), // todo
+        $._name_not_fully_reserved_or_constant_string
+      ),
+
+    // i.e. AlterDatabaseSetStmt
+    statement_alter_database: ($) =>
+      s(
+        kw("alter"),
+        kw("database"),
+        f("name", $.name),
+        // i.e. SetResetClause
+        choice(
+          s(
+            kw("set"),
+            // i.e. set_rest
+            choice(
+              s(
+                opt(kw("session characteristics as")),
+                kw("transaction"),
+                // i.e. transaction_mode_list
+                sep(f("transaction_modes", $.transaction_mode), opt(punct(",")))
+              ),
+              // i.e. set_rest_more
+              choice(
+                // i.e. generic_set
+                s(
+                  f("property_name", $.name_variable),
+                  choice(kw("to"), punct("=")),
+                  choice(
+                    kw("default"),
+                    comma(f("property_values", $.set_property_value))
+                  )
+                ),
+                s(kw("time zone"), f("time_zone", $.time_zone)),
+                s(kw("catalog"), f("catalog", $.constant_string)),
+                s(kw("schema"), f("schema", $.constant_string)),
+                s(
+                  kw("names"),
+                  // i.e. opt_encoding
+                  opt(choice(kw("default"), f("encoding", $.constant_string)))
+                ),
+                s(
+                  kw("role"),
+                  f("role", $._name_not_fully_reserved_or_constant_string)
+                ),
+                s(
+                  kw("session authorization"),
+                  choice(
+                    f(
+                      "session_authorization",
+                      $._name_not_fully_reserved_or_constant_string
+                    ),
+                    kw("default")
+                  )
+                ),
+                s(
+                  kw("xml option"),
+                  // i.e. document_or_content
+                  choice(kw("document"), kw("content"))
+                ),
+                s(
+                  kw("transaction snapshot"),
+                  f("transaction_snapshot", $.constant_string)
+                )
+              )
+            )
+          ),
+          // i.e. VariableResetStmt
+          s(
+            kw("reset"),
+            // i.e. reset_rest
+            choice(
+              // i.e. generic_reset
+              choice(f("reset_name", $.name_variable), kw("all")),
+              kw("time zone"),
+              kw("transaction isolation level"),
+              kw("session authorization")
+            )
+          )
+        )
       ),
 
     // >>> i.e. SelectStmt
