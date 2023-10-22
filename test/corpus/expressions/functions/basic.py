@@ -77,14 +77,16 @@ source_file
                     (operator) operator_qualified
                         (keywords) operator
                         (punctuation): "("
-                        (namespaces): "someschema"
-                        (punctuation): "."
-                        (operator) operator_generic: "+++"
+                        operator_namespaced
+                            (namespaces): "someschema"
+                            (punctuation): "."
+                            (operator) operator_generic: "+++"
                         (punctuation): ")"
                 (instructions) sort_clause_item
                     (operator) operator_qualified
-                        (namespaces): "someschema"
-                        (operator) operator_math: "="
+                        operator_namespaced
+                            (namespaces): "someschema"
+                            (operator) operator_math: "="
 
     expression_function_call_windowed
         expression_function_call_generic
@@ -229,11 +231,12 @@ source_file
                     2 (operator) operator_qualified
                         0 (keywords) operator: b'operator'
                         1 (punctuation) '(': b'('
-                        2 (namespaces) column_identifier
-                            0 (identifier) identifier: b'someschema'
-                        3 (punctuation) '.': b'.'
-                        4 (operator) operator_generic: b'+++'
-                        5 (punctuation) ')': b')'
+                        2 operator_namespaced
+                            0 (namespaces) column_identifier
+                                0 (identifier) identifier: b'someschema'
+                            1 (punctuation) '.': b'.'
+                            2 (operator) operator_generic: b'+++'
+                        3 (punctuation) ')': b')'
                 13 (punctuation) ',': b','
                 14 (instructions) sort_clause_item
                     0 (expression) constant_integer: b'6'
@@ -241,12 +244,13 @@ source_file
                     2 (operator) operator_qualified
                         0 (keywords) operator: b'operator'
                         1 (punctuation) '(': b'('
-                        2 (namespaces) column_identifier
-                            0 (identifier) identifier: b'someschema'
-                        3 (punctuation) '.': b'.'
-                        4 (operator) operator_math
-                            0 '+': b'+'
-                        5 (punctuation) ')': b')'
+                        2 operator_namespaced
+                            0 (namespaces) column_identifier
+                                0 (identifier) identifier: b'someschema'
+                            1 (punctuation) '.': b'.'
+                            2 (operator) operator_math
+                                0 '+': b'+'
+                        3 (punctuation) ')': b')'
             8 (punctuation) ')': b')'
     11 (punctuation) ';': b';'
     12 expression_function_call_windowed

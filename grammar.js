@@ -12,26 +12,26 @@ const parcomma = (...rule) => parens(comma(...rule));
 const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
-const kw_base = (name) =>
-  alias(
-    token(
-      prec(
-        1,
-        // name
-        new RegExp(
-          // limited version that will only map A-Z to a-z
-          // this implementation is correct as long as all keywords are ASCII
-          Array.from(name)
-            .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
-            .join("")
-        )
-      )
-    ),
-    name
-  );
+// const kw_base = (name) =>
+//   alias(
+//     token(
+//       prec(
+//         1,
+//         // name
+//         new RegExp(
+//           // limited version that will only map A-Z to a-z
+//           // this implementation is correct as long as all keywords are ASCII
+//           Array.from(name)
+//             .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
+//             .join("")
+//         )
+//       )
+//     ),
+//     name
+//   );
 
 // debugging version that shows readable tokens in conflict reports
-// const kw_base = (name) => alias(token(prec(1, name)), name);
+const kw_base = (name) => alias(token(prec(1, name)), name);
 const kw = (name) =>
   s(...name.split(" ").map((x) => f("keywords", kw_base(x))));
 
@@ -96,6 +96,7 @@ module.exports = grammar({
         $.statement_alter_collation,
         $.statement_alter_database,
         $.statement_alter_default_privileges,
+        $.statement_alter_domain,
         $.statement_select
       ),
 
@@ -111,18 +112,16 @@ module.exports = grammar({
     // i.e. all_Op
     operator: ($) => choice($.operator_generic, $.operator_math),
 
-    operator_qualified: ($) =>
+    // i.e. any_operator
+    operator_namespaced: ($) =>
       s(
-        kw("operator"),
-        parens(
-          // i.e. any_operator
-          s(
-            sep(f("namespaces", $.column_identifier), "."),
-            punct("."),
-            f("operator", $.operator)
-          )
-        )
+        sep(f("namespaces", $.column_identifier), "."),
+        punct("."),
+        f("operator", $.operator)
       ),
+
+    operator_qualified: ($) =>
+      prec(2, s(kw("operator"), parens($.operator_namespaced))),
     // i.e. qual_Op
     operator_generic_possibly_qualified: ($) =>
       choice($.operator_generic, $.operator_qualified),
@@ -1288,6 +1287,10 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. func_type
+    // todo
+    type_function: ($) => choice($.type_name),
+
     // >>> Expressions
 
     // i.e. Iconst
@@ -1795,6 +1798,170 @@ module.exports = grammar({
         kw("local")
       ),
 
+    // i.e. opt_c_include
+    _index_included_column_list: ($) =>
+      s(
+        kw("include"),
+        parens(
+          // i.e. columnList
+          comma(f("included_columns", $.column_identifier))
+        )
+      ),
+
+    // i.e. def_elem
+    definition_item: ($) =>
+      s(
+        f("column", $.column_label),
+        opt(
+          punct("="),
+          f(
+            "definition",
+            choice(
+              $.type_function,
+              $.keyword_reserved,
+              $.operator_possibly_qualified,
+              $._constant_numeric,
+              $.constant_string,
+              kw("none")
+            )
+          )
+        )
+      ),
+
+    // i.e. opt_definition
+    index_definition: ($) =>
+      s(
+        kw("with"),
+        // i.e. definition
+        parens(
+          // i.e. def_list
+          comma(
+            // i.e. def_elem
+            f("defintions", $.definition_item)
+          )
+        )
+      ),
+
+    // i.e. OptConsTableSpace
+    _table_constraint_index_table_space: ($) =>
+      s(kw("using index tablespace"), f("tablespace", $.name)),
+
+    // i.e. key_action
+    on_conflict_action: ($) =>
+      choice(
+        kw("no action"),
+        kw("restrict"),
+        kw("cascade"),
+        s(
+          kw("set"),
+          choice(kw("null"), kw("default")),
+          // i.e. opt_column_list
+          opt(
+            parens(
+              // i.e. columnList
+              comma(f("targets", $.column_identifier))
+            )
+          )
+        )
+      ),
+
+    // i.e. TableConstraint
+    // todo(maximsmol): test this
+    table_constraint: ($) =>
+      s(
+        opt(kw("constraint"), f("name", $.name)),
+        // i.e. ConstraintElem
+        choice(
+          s(kw("check"), parens(f("check_expression", $.expression))),
+          s(kw("not null"), f("column", $.column_identifier)),
+          s(
+            choice(kw("unique"), kw("primary key")),
+            choice(
+              s(
+                // i.e. opt_unique_null_treatment
+                opt(kw("nulls"), opt(kw("not")), kw("distinct")),
+                parens(
+                  // i.e. columnList
+                  comma(f("columns", $.column_identifier))
+                ),
+                opt($._index_included_column_list),
+                opt(f("index_definition", $.index_definition)),
+                opt($._table_constraint_index_table_space)
+              ),
+              s(kw("using index"), f("index", $.name))
+            )
+          ),
+          s(
+            kw("exclude"),
+            opt(kw("using"), f("using", $.name)),
+            parens(
+              // i.e. ExclusionConstraintList
+              comma(
+                // i.e. ExclusionConstraintElem
+                s(
+                  // i.e. index_elem
+                  "aaaaa", // todo
+                  kw("with"),
+                  f(
+                    "exclude_operator",
+                    choice($.operator_namespaced, $.operator_qualified)
+                  )
+                )
+              )
+            ),
+            opt($._index_included_column_list),
+            opt(f("index_definition", $.index_definition)),
+            opt($._table_constraint_index_table_space),
+            opt(kw("where"), parens(f("where", $.expression)))
+          ),
+          s(
+            kw("foreign key"),
+            parens(
+              // i.e. columnList
+              comma(f("columns", $.column_identifier))
+            ),
+            kw("references"),
+            f("target", $.name_qualified),
+            // i.e. opt_column_list
+            opt(
+              parens(
+                // i.e. columnList
+                comma(f("target_columns", $.column_identifier))
+              )
+            ),
+            // i.e. key_match
+            opt(kw("match"), choice(kw("full"), kw("partial"), kw("simple"))),
+            // i.e. key_actions
+            opt(
+              choice(
+                // i.e. key_update
+                s(
+                  kw("on update"),
+                  f("on_update", $.on_conflict_action),
+                  opt(kw("on delete"), f("on_delete", $.on_conflict_action))
+                ),
+                // i.e. key_delete
+                s(
+                  kw("on delete"),
+                  f("on_delete", $.on_conflict_action),
+                  opt(kw("on update"), f("on_update", $.on_conflict_action))
+                )
+              )
+            )
+          )
+        ),
+        // i.e. ConstraintAttributeSpec
+        repeat(
+          // i.e. ConstraintAttributeElem
+          choice(
+            s(opt(kw("not")), kw("deferrable")),
+            s(kw("initially"), choice(kw("immediate"), kw("deferred"))),
+            kw("not valid"),
+            kw("no inherit")
+          )
+        )
+      ),
+
     // >>> i.e. AlterEventTrigStmt
     // todo: merge variants of rename, set owner
     statement_alter_event_trigger: ($) =>
@@ -2034,6 +2201,30 @@ module.exports = grammar({
             // i.e. opt_drop_behavior
             opt(choice(kw("cascade"), kw("restrict")))
           )
+        )
+      ),
+
+    // >>> i.e. AlterDomainStmt
+    statement_alter_domain: ($) =>
+      s(
+        kw("alter domain"),
+        f("name", $.name_namespaced),
+        choice(
+          choice(
+            // i.e. alter_column_default
+            s(kw("set default"), f("default", $.expression)),
+            kw("drop default")
+          ),
+          s(choice(kw("drop"), kw("set")), kw("not null")),
+          s(kw("add"), f("constraint", $.table_constraint)),
+          s(
+            kw("drop constraint"),
+            opt(kw("if exists")),
+            f("constraint", $.name),
+            // i.e. opt_drop_behavior
+            opt(choice(kw("cascade"), kw("restrict")))
+          ),
+          s(kw("validate constraint"), f("constraint", $.name))
         )
       ),
 
