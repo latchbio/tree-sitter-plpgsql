@@ -12,26 +12,26 @@ const parcomma = (...rule) => parens(comma(...rule));
 const quotable = (rule, quote) =>
   choice(s(quote, anon(rule), quote), anon(rule));
 
-// const kw_base = (name) =>
-//   alias(
-//     token(
-//       prec(
-//         1,
-//         // name
-//         new RegExp(
-//           // limited version that will only map A-Z to a-z
-//           // this implementation is correct as long as all keywords are ASCII
-//           Array.from(name)
-//             .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
-//             .join("")
-//         )
-//       )
-//     ),
-//     name
-//   );
+const kw_base = (name) =>
+  alias(
+    token(
+      prec(
+        1,
+        // name
+        new RegExp(
+          // limited version that will only map A-Z to a-z
+          // this implementation is correct as long as all keywords are ASCII
+          Array.from(name)
+            .map((x) => `[${x.toLowerCase()}${x.toUpperCase()}]`)
+            .join("")
+        )
+      )
+    ),
+    name
+  );
 
 // debugging version that shows readable tokens in conflict reports
-const kw_base = (name) => alias(token(prec(1, name)), name);
+// const kw_base = (name) => alias(token(prec(1, name)), name);
 const kw = (name) =>
   s(...name.split(" ").map((x) => f("keywords", kw_base(x))));
 
