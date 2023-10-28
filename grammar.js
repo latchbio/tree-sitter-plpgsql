@@ -32,8 +32,24 @@ let kw_base = (name) =>
 
 // debugging version that shows readable tokens in conflict reports
 // kw_base = (name) => alias(token(prec(1, name)), name);
-const kw = (name) =>
-  s(...name.split(" ").map((x) => f("keywords", kw_base(x))));
+const kw = (pat) =>
+  choice(
+    ...pat.split("|").map((alt) =>
+      s(
+        ...alt
+          .trim()
+          .split(" ")
+          .map((x) => {
+            const isOpt = x.endsWith("?");
+            if (isOpt) x = x.slice(0, -1);
+
+            const res = f("keywords", kw_base(x));
+            if (isOpt) return opt(res);
+            return res;
+          })
+      )
+    )
+  );
 
 module.exports = grammar({
   name: "plpgsql",
@@ -112,7 +128,7 @@ module.exports = grammar({
         // $.statement_alter_sequence,
         // $.statement_alter_system,
         // $.statement_alter_table,
-        // $.statement_alter_table_space,
+        // $.statement_alter_tablespace,
         // $.statement_alter_composite_type,
         // $.statement_alter_publication,
         // $.statement_alter_role_set,
@@ -129,6 +145,7 @@ module.exports = grammar({
         // $.statement_comment,
         // $.statement_constraint,
         // $.statement_copy,
+        $.statement_create_table,
         $.statement_select
       ),
 
@@ -1840,27 +1857,24 @@ module.exports = grammar({
         )
       ),
 
+    // i.e. def_arg
+    definition_value: ($) =>
+      choice(
+        $.type_function,
+        $.keyword_reserved,
+        $.operator_possibly_qualified,
+        $._constant_numeric,
+        $.constant_string,
+        kw("none")
+      ),
+
     // i.e. def_elem
     definition_item: ($) =>
       s(
         f("column", $.column_label),
-        opt(
-          punct("="),
-          f(
-            "definition",
-            choice(
-              $.type_function,
-              $.keyword_reserved,
-              $.operator_possibly_qualified,
-              $._constant_numeric,
-              $.constant_string,
-              kw("none")
-            )
-          )
-        )
+        opt(punct("="), f("definition", $.definition_value))
       ),
 
-    // i.e. opt_definition
     index_definition: ($) =>
       s(
         kw("with"),
@@ -1875,7 +1889,7 @@ module.exports = grammar({
       ),
 
     // i.e. OptConsTableSpace
-    _table_constraint_index_table_space: ($) =>
+    _table_constraint_index_tablespace: ($) =>
       s(kw("using index tablespace"), f("tablespace", $.name)),
 
     // i.e. key_action
@@ -1897,8 +1911,25 @@ module.exports = grammar({
         )
       ),
 
+    _key_match: ($) => s(kw("match"), kw("full | partial | simple")),
+    _key_actions: ($) =>
+      choice(
+        // i.e. key_update
+        s(
+          kw("on update"),
+          f("on_update", $.on_conflict_action),
+          opt(kw("on delete"), f("on_delete", $.on_conflict_action))
+        ),
+        // i.e. key_delete
+        s(
+          kw("on delete"),
+          f("on_delete", $.on_conflict_action),
+          opt(kw("on update"), f("on_update", $.on_conflict_action))
+        )
+      ),
+
     // i.e. TableConstraint
-    // todo(maximsmol): test this
+    // todo: test
     table_constraint: ($) =>
       s(
         opt(kw("constraint"), f("name", $.name)),
@@ -1917,8 +1948,9 @@ module.exports = grammar({
                   comma(f("columns", $.column_identifier))
                 ),
                 opt($._index_included_column_list),
+                // i.e. opt_definition
                 opt(f("index_definition", $.index_definition)),
-                opt($._table_constraint_index_table_space)
+                opt($._table_constraint_index_tablespace)
               ),
               s(kw("using index"), f("index", $.name))
             )
@@ -1943,7 +1975,7 @@ module.exports = grammar({
             ),
             opt($._index_included_column_list),
             opt(f("index_definition", $.index_definition)),
-            opt($._table_constraint_index_table_space),
+            opt($._table_constraint_index_tablespace),
             opt(kw("where"), parens(f("where", $.expression)))
           ),
           s(
@@ -1962,24 +1994,9 @@ module.exports = grammar({
               )
             ),
             // i.e. key_match
-            opt(kw("match"), choice(kw("full"), kw("partial"), kw("simple"))),
+            opt($._key_match),
             // i.e. key_actions
-            opt(
-              choice(
-                // i.e. key_update
-                s(
-                  kw("on update"),
-                  f("on_update", $.on_conflict_action),
-                  opt(kw("on delete"), f("on_delete", $.on_conflict_action))
-                ),
-                // i.e. key_delete
-                s(
-                  kw("on delete"),
-                  f("on_delete", $.on_conflict_action),
-                  opt(kw("on update"), f("on_update", $.on_conflict_action))
-                )
-              )
-            )
+            opt($._key_actions)
           )
         ),
         // i.e. ConstraintAttributeSpec
@@ -2000,7 +2017,7 @@ module.exports = grammar({
         kw("true"),
         kw("false"),
         kw("on"),
-        // kw("off"), // todo
+        // kw("off"), // todo: causes a conflict
         $._name_not_fully_reserved_or_constant_string
       ),
 
@@ -2319,6 +2336,294 @@ module.exports = grammar({
     // i.e. analyze_keyword
     _analyze_keyword: ($) => choice(kw("analyze"), kw("analyse")),
 
+    // >>> i.e. CreateStmt
+    statement_create_table: ($) =>
+      s(
+        kw("create"),
+        // i.e. OptTemp
+        opt($._temporary_spec),
+        kw("table"),
+        opt(kw("if not exists")),
+        f("name", $.name_qualified),
+        choice(
+          s(
+            parens(
+              // i.e. OptTableElementList
+              opt(
+                // i.e. TableElementList
+                comma(f("items", $.table_item))
+              )
+            ),
+            // i.e. OptInherit
+            opt(
+              kw("inherits"),
+              parens(
+                // i.e. qualified_name_list
+                comma(f("inherits", $.name_qualified))
+              )
+            )
+          ),
+          s(
+            choice(
+              s(kw("of"), f("type_name", $.name_namespaced)),
+              s(kw("partition of"), f("partition_parent", $.name_qualified))
+            ),
+            // i.e. OptTypedTableElementList
+            parens(
+              // i.e. TypedTableElementList
+              comma(f("items", $.table_item_typed))
+            )
+          )
+        ),
+        // i.e. OptPartitionSpec
+        opt(f("partition_specification", $.partition_specification)),
+        // i.e. table_access_method_clause
+        opt(kw("using"), f("access_method", $.name)),
+        // i.e. OptWith
+        opt(
+          choice(
+            s(
+              kw("with"),
+              // i.e. reloptions
+              parens(
+                // i.e. reloption_list
+                comma(f("storage_options", $.table_storage_option))
+              )
+            ),
+            kw("without oids")
+          )
+        ),
+        // i.e. OnCommitOption
+        opt(
+          kw("on commit"),
+          choice(kw("drop"), kw("delete rows"), kw("preserve rows"))
+        ),
+        // i.e. OptTableSpace
+        opt(kw("tablespace"), f("tablespace", $.name))
+      ),
+
+    // i.e. reloption_elem
+    table_storage_option: ($) =>
+      prec(
+        2,
+        s(
+          opt(f("namespace", $.column_label), punct(".")),
+          f("name", $.column_label),
+          opt(choice(punct("="), f("value", $.definition_value)))
+        )
+      ),
+
+    // i.e. TableElement
+    table_item: ($) =>
+      choice(
+        f("column", $.column_definition),
+        // i.e. TableLikeClause
+        s(
+          kw("like"),
+          f("source", $.name_qualified),
+          // i.e. TableLikeOptionList
+          repeat(
+            s(
+              kw("including | excluding"),
+              // i.e. TableLikeOption
+              kw(
+                "comments | compression | contraints | defaults | identity | generated | indexes | statistics | storage | all"
+              )
+            )
+          )
+        ),
+        f("constraint", $.table_constraint)
+      ),
+
+    // i.e. TypedTableElement
+    table_item_typed: ($) =>
+      choice(
+        // i.e. columnOptions
+        s(
+          f("column", $.column_identifier),
+          opt(kw("with options")),
+          // i.e. ColQualList
+          repeat(f("constraints", $.column_constraint))
+        ),
+        f("constraint", $.table_constraint)
+      ),
+
+    // i.e. columnDef
+    column_definition: ($) =>
+      s(
+        f("name", $.column_identifier),
+        f("type", $.type_name),
+        // i.e. opt_column_storage
+        opt(
+          // i.e. column_storage
+          kw("storage"),
+          choice(f("storage", $.column_identifier), kw("default"))
+        ),
+        // i.e. opt_column_compression
+        opt(
+          // i.e. column_compression
+          kw("compression"),
+          choice(f("compression", $.column_identifier), kw("default"))
+        ),
+        // i.e. create_generic_options
+        opt(
+          kw("options"),
+          parens(
+            // i.e. generic_option_list
+            comma($.generic_option)
+          )
+        ),
+        // i.e. ColQualList
+        repeat(f("constraints", $.column_constraint))
+      ),
+
+    // i.e. generic_option_elem
+    generic_option: ($) =>
+      s(
+        // i.e. generic_option_name
+        f("name", $.column_label),
+        f("value", $.constant_string)
+      ),
+
+    // i.e. ColConstraint
+    column_constraint: ($) =>
+      prec.left(
+        choice(
+          s(
+            opt(kw("constraint"), f("name", $.name)),
+            // i.e. ColConstraintElem
+            choice(
+              s(
+                kw("not null"),
+                // i.e. opt_no_inherit
+                opt(kw("no inherit"))
+              ),
+              kw("null"),
+              s(
+                kw("unique"),
+                // i.e. opt_unique_null_treatment
+                opt(kw("nulls not? distinct")),
+                // i.e. opt_definition
+                opt(f("index_definition", $.index_definition)),
+                opt($._table_constraint_index_tablespace)
+              ),
+              s(
+                kw("primary key"),
+                // i.e. opt_definition
+                opt(f("index_definition", $.index_definition)),
+                opt($._table_constraint_index_tablespace)
+              ),
+              s(
+                kw("check"),
+                parens(
+                  f("expression", $.expression),
+                  // i.e. opt_no_inherit
+                  opt(kw("no inherit"))
+                )
+              ),
+              s(kw("default"), f("expression", $.expression_restricted)),
+              s(
+                kw("generated"),
+                // i.e. generated_when
+                kw("always | by default"),
+                kw("as"),
+                choice(
+                  s(
+                    kw("identity"),
+                    // i.e. OptParenthesizedSeqOptList
+                    parens(
+                      // i.e. SeqOptList
+                      repeat1($.sequence_option)
+                    )
+                  ),
+                  s(parens(f("expression", $.expression)), kw("stored"))
+                )
+              ),
+              s(
+                kw("references"),
+                f("target", $.name_qualified),
+                // i.e. opt_column_list
+                opt(
+                  parens(
+                    // i.e. columnList
+                    comma(f("target_columns", $.column_identifier))
+                  )
+                ),
+                // i.e. key_match
+                opt($._key_match),
+                // i.e. key_actions
+                opt($._key_actions)
+              )
+            ),
+            // i.e. ConstraintAttr
+            opt(
+              choice(
+                kw("not? deferrable"),
+                s(kw("initially"), kw("deferred | immediate"))
+              )
+            )
+          ),
+          // ConstraintAttr
+          // normally would be here to avoid conflicts but we parse directly instead
+          s(kw("collate"), f("collation", $.name_namespaced))
+        )
+      ),
+
+    // i.e. SeqOptElem
+    sequence_option: ($) =>
+      choice(
+        s(kw("as"), f("type", $.type_name)),
+        s(kw("cache"), f("amount", $._constant_numeric)),
+        kw("no? cycle"),
+        s(
+          // i.e. opt_by
+          kw("increment by?"),
+          f("amount", $._constant_numeric)
+        ),
+        s(kw("maxvalue | minvalue"), f("value", $._constant_numeric)),
+        s(opt(kw("no")), kw("maxvalue | minvalue")),
+        s(kw("owned by"), f("owner", $.name_namespaced)),
+        s(kw("sequence name"), f("name", $.name_namespaced)),
+        s(
+          kw("start | restart"),
+          // i.e. opt_with
+          kw("with?"),
+          f("value", $._constant_numeric)
+        ),
+        kw("restart")
+      ),
+
+    // i.e. PartitionSpec
+    partition_specification: ($) =>
+      s(
+        kw("partition by"),
+        f("column", $.column_identifier),
+        parens(
+          // i.e. part_params
+          comma(f("items", $.partition_specification_item))
+        )
+      ),
+
+    // i.e. part_elem
+    partition_specification_item: ($) =>
+      s(
+        choice(
+          f("expression", $.column_identifier),
+          f("expression", $.expression_function_call),
+          parens(f("expression", $.expression))
+        ),
+        // i.e. opt_collate
+        opt(kw("collate"), f("collation", $.name_namespaced)),
+        // i.e. opt_qualified_name
+        opt(f("operation_class", $.name_namespaced))
+      ),
+
+    _temporary_spec: ($) =>
+      choice(
+        s(opt(kw("global | local")), kw("temporary | temp")),
+        kw("unlogged")
+      ),
+
     // >>> i.e. SelectStmt
     // i.e. select_no_parens
     // i.e. select_with_parens
@@ -2345,7 +2650,7 @@ module.exports = grammar({
     // i.e. alias_clause
     select_from_table_reference_alias_clause: ($) =>
       s(
-        opt(kw("as")),
+        kw("as?"),
         f("name", $.column_identifier),
         opt(parcomma(f("columns", $.name)))
       ),
@@ -2397,15 +2702,14 @@ module.exports = grammar({
         choice(
           f("function_call", $.expression_function_call),
           s(
-            kw("rows"),
-            kw("from"),
+            kw("rows from"),
             parcomma(
               // i.e. rowsfrom_list
               f("columns", $.select_from_rows_from_item)
             )
           )
         ),
-        opt(kw("with"), kw("ordinality"))
+        opt(kw("with ordinality"))
       ),
 
     // i.e. group_by_list
@@ -2421,8 +2725,7 @@ module.exports = grammar({
           prec(2, s(kw("rollup"), parens($.expression_list))), // todo: rename expressions
           // i.e. grouping_sets_clause
           s(
-            kw("grouping"),
-            kw("sets"),
+            kw("grouping sets"),
             parens(f("grouping_sets", $.select_group_by_list))
           )
         )
@@ -2450,7 +2753,7 @@ module.exports = grammar({
         choice(
           s(
             // i.e. opt_all_clause
-            opt(kw("all")),
+            kw("all?"),
             // i.e. opt_target_list
             opt(f("targets", $.select_target_list))
           ),
@@ -2484,15 +2787,8 @@ module.exports = grammar({
 
     _into_clause: ($) =>
       s(
-        opt(
-          choice(
-            s(
-              opt(choice(kw("global"), kw("local"))),
-              choice(kw("temporary"), kw("temp"))
-            ),
-            kw("unlogged")
-          )
-        ),
+        // i.e. OptTemp
+        opt($._temporary_spec),
         opt(kw("table")),
         f("table_name", $.name_qualified)
       ),
@@ -2520,7 +2816,7 @@ module.exports = grammar({
     _group_by: ($) =>
       s(
         // i.e. set_quantifier
-        opt(choice(kw("all"), kw("distinct"))),
+        opt(kw("all | distinct")),
         f("group_by", $.select_group_by_list)
       ),
 
